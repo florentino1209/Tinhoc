@@ -1,0 +1,2038 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mô phỏng Ngăn xếp (Stack) & Hàng đợi (Queue) - Tin học 12</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700;800&family=Fira+Code:wght@500;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: { fontFamily: { sans: ['Lexend', 'sans-serif'], mono: ['Fira Code', 'monospace'] } } }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Lexend', sans-serif;
+            background-color: #fff1f3;
+            background-image: radial-gradient(#ffb6c1 1.8px, transparent 1.8px), radial-gradient(#ffb6c1 1.8px, #fff1f3 1.8px);
+            background-size: 60px 60px;
+            background-position: 0 0, 30px 30px;
+            color: #1e293b; font-size: 16px; font-weight: 600; overflow-x: hidden;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .dark body, body.dark-mode {
+            background-color: #0b0f19;
+            background-image: radial-gradient(#1e293b 1.5px, transparent 1.5px), radial-gradient(#1e293b 1.5px, #0b0f19 1.5px);
+            color: #f1f5f9;
+        }
+        .code-font { font-family: 'Fira Code', monospace; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.96); backdrop-filter: blur(12px);
+            border: 3px solid #f472b6;
+            box-shadow: 0 12px 30px -5px rgba(244, 114, 182, 0.3), 0 8px 12px -6px rgba(0, 0, 0, 0.1);
+        }
+        .dark .glass-card, body.dark-mode .glass-card {
+            background: rgba(15, 23, 42, 0.95); border: 3px solid #334155;
+            box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.7);
+        }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #fce7f3; border-radius: 10px; }
+        .dark ::-webkit-scrollbar-track, body.dark-mode ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #ec4899; border-radius: 10px; }
+        .stack-tube {
+            border-left: 6px solid #0284c7; border-right: 6px solid #0284c7; border-bottom: 10px solid #0369a1;
+            border-bottom-left-radius: 20px; border-bottom-right-radius: 20px;
+            background: linear-gradient(180deg, rgba(224, 242, 254, 0.6) 0%, rgba(186, 230, 253, 0.9) 100%);
+            box-shadow: inset 0 -10px 20px rgba(56, 189, 248, 0.3);
+        }
+        .dark .stack-tube, body.dark-mode .stack-tube {
+            border-left: 6px solid #38bdf8; border-right: 6px solid #38bdf8; border-bottom: 10px solid #0284c7;
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.7) 100%, rgba(3, 105, 161, 0.4) 0%);
+        }
+        .queue-pipe {
+            border-top: 6px solid #22c55e; border-bottom: 6px solid #22c55e; border-radius: 20px;
+            background: linear-gradient(90deg, rgba(220, 252, 231, 0.7) 0%, rgba(187, 247, 208, 0.95) 100%);
+            box-shadow: inset 0 0 15px rgba(34, 197, 94, 0.3);
+        }
+        .glow-active { box-shadow: 0 0 25px rgba(14, 165, 233, 0.9); }
+        
+        #intro-overlay {
+            position: fixed; inset: 0; z-index: 9999;
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(88, 28, 135, 0.95));
+            backdrop-filter: blur(16px);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 20px; transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .intro-card {
+            background: rgba(255, 255, 255, 0.95);
+            border: 4px solid #f472b6;
+            box-shadow: 0 25px 50px -12px rgba(244, 114, 182, 0.5);
+            border-radius: 36px; max-width: 650px; width: 100%;
+            padding: 35px; text-align: center; position: relative;
+            animation: introCardPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .dark .intro-card, body.dark-mode .intro-card {
+            background: rgba(30, 41, 59, 0.95); border: 4px solid #cbd5e1; color: #f8fafc;
+        }
+        @keyframes introCardPop {
+            0% { transform: scale(0.6) translateY(30px); opacity: 0; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+
+        #chibi-character {
+            position: fixed; z-index: 100; cursor: grab; user-select: none; touch-action: none;
+            will-change: left, top; transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        #chibi-character:active { cursor: grabbing; }
+        .chibi-walking { animation: chibiWaddle 0.4s ease-in-out infinite alternate; }
+        .chibi-resting { animation: chibiRest 1.2s ease-in-out infinite alternate; }
+        .chibi-flipped { transform: scaleX(-1); }
+        .chibi-dragging { transform: scale(1.15) rotate(10deg); filter: drop-shadow(0 15px 15px rgba(255, 105, 180, 0.5)); }
+        .chibi-clicked { animation: chibiJump 0.3s ease-in-out; }
+        .chibi-spamming { animation: chibiShake 0.25s ease-in-out infinite alternate; }
+        .chibi-eating { transform: scale(5.5) !important; filter: drop-shadow(0 20px 40px rgba(255, 105, 180, 0.8)); animation: chibiNom 0.2s ease-in-out infinite alternate; }
+
+        @keyframes chibiWaddle { 0% { transform: translateY(0px) rotate(-3deg); } 100% { transform: translateY(-6px) rotate(3deg); } }
+        @keyframes chibiRest { 0% { transform: translateY(2px) rotate(0deg) scale(0.98); } 100% { transform: translateY(6px) rotate(2deg) scale(0.96); } }
+        @keyframes chibiJump { 0% { transform: translateY(0) scale(1); } 50% { transform: translateY(-25px) scale(1.2) rotate(-5deg); } 100% { transform: translateY(0) scale(1); } }
+        @keyframes chibiShake { 0% { transform: translateY(0) rotate(-10deg) scale(1.25); } 100% { transform: translateY(-6px) rotate(10deg) scale(1.25); } }
+        @keyframes chibiNom { 0% { transform: scale(5.5) rotate(-3deg); } 100% { transform: scale(5.8) rotate(3deg); } }
+
+        .chibi-item-held { position: absolute; top: -35px; right: -20px; z-index: 105; animation: floatHeldItem 0.5s ease-in-out infinite alternate; }
+        @keyframes floatHeldItem { 0% { transform: translateY(0px) scale(1); } 100% { transform: translateY(-4px) scale(1.05); } }
+        #spam-overlay { position: fixed; inset: 0; background: rgba(244, 114, 182, 0.3); backdrop-filter: blur(2px); z-index: 90; display: none; }
+
+        #egg-splatter-overlay {
+            position: fixed; inset: 0; pointer-events: none; z-index: 150; display: none; overflow: hidden;
+        }
+        .egg-splatter-splash {
+            position: absolute; transform: scale(0);
+            animation: eggSplatterAnim 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            filter: drop-shadow(0 15px 30px rgba(0,0,0,0.6)); pointer-events: auto;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        @keyframes eggSplatterAnim {
+            0% { transform: scale(0) rotate(-45deg); opacity: 0; }
+            100% { transform: scale(1) rotate(0deg); opacity: 0.98; }
+        }
+        .flying-egg-projectile {
+            position: fixed; z-index: 160; font-size: 45px; pointer-events: none; transition: all 0.5s ease-in-out;
+        }
+
+        #cleaning-cloth {
+            position: fixed; bottom: 20px; left: 20px; z-index: 170; display: none;
+            cursor: grab; user-select: none; touch-action: none;
+            background: rgba(255, 255, 255, 0.95); border: 3px solid #38bdf8; border-radius: 50%;
+            width: 65px; height: 65px; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 10px 25px rgba(56, 189, 248, 0.5); transition: transform 0.1s; font-size: 32px;
+        }
+        #cleaning-cloth:active { cursor: grabbing; transform: scale(1.15); }
+
+        #fixed-chibi-container {
+            position: fixed; bottom: 25px; right: 25px; z-index: 120;
+            cursor: pointer; user-select: none; transition: transform 0.2s ease-in-out;
+        }
+        #fixed-chibi-container:hover { transform: scale(1.08); }
+        #fixed-chibi-container:active { transform: scale(0.95); }
+
+        .fixed-speech-bubble {
+            position: absolute; bottom: 115%; right: 0px; background: #0f172a; color: #f8fafc;
+            padding: 10px 16px; border-radius: 18px; font-size: 13px; font-weight: 700;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3); border: 2px solid #38bdf8; z-index: 130;
+            display: none; width: max-content; max-width: 280px; white-space: normal; word-wrap: break-word;
+            animation: bubblePop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .fixed-speech-bubble::after {
+            content: ''; position: absolute; bottom: -8px; right: 35px; width: 0; height: 0;
+            border: 8px solid transparent; border-top-color: #0f172a; border-bottom: 0;
+        }
+
+        @keyframes bubblePop {
+            0% { transform: scale(0.5) translateY(10px); opacity: 0; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col text-slate-900 dark:text-slate-100 font-bold">
+
+    <!-- THẺ AUDIO NỀN -->
+    <audio id="bg-audio" preload="auto"></audio>
+
+    <!-- INTRO OVERLAY -->
+    <div id="intro-overlay">
+        <div class="intro-card flex flex-col items-center space-y-4 text-slate-800 dark:text-slate-100">
+            <div class="w-28 h-28 rounded-full bg-pink-100 dark:bg-slate-700 border-4 border-pink-400 dark:border-slate-500 flex items-center justify-center shadow-xl overflow-hidden animate-bounce relative group">
+                <img id="intro-chibi-avatar" src="https://i.ibb.co/3ykfLp6/chibi-normal.png" alt="Intro Chibi" class="w-full h-full object-contain">
+                <label for="intro-avatar-file" class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-[11px] cursor-pointer font-extrabold">
+                    📷 Đổi ảnh
+                </label>
+                <input type="file" id="intro-avatar-file" accept="image/*" class="hidden" onchange="changeIntroAvatar(event)">
+            </div>
+            <div>
+                <h1 class="text-xl sm:text-2xl font-extrabold text-pink-600 dark:text-pink-400 tracking-wide mb-1">🌸 CHÀO MỪNG ĐẾN VỚI CẤU TRÚC DỮ LIỆU 🌸</h1>
+                <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-extrabold px-4">
+                    "Web tích hợp nhạc, Stack & Queue kèm bé Chibi siêu quậy. Bấm nút dưới để mở khóa âm thanh và bắt đầu!"
+                </p>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-3 w-full pt-1">
+                <button onclick="closeIntro(false)" class="flex-1 py-3 px-4 bg-pink-600 hover:bg-pink-700 active:scale-95 text-white font-extrabold text-xs sm:text-sm rounded-2xl shadow-lg transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-play"></i> Bật nhạc & Học tập nghiêm túc 📚
+                </button>
+                <button onclick="closeIntro(true)" class="flex-1 py-3 px-4 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-extrabold text-xs sm:text-sm rounded-2xl shadow-lg transition flex items-center justify-center gap-2 animate-pulse">
+                    <i class="fa-solid fa-gamepad"></i> Wonderhoy quậy tung tóe! ✨
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL THÊM NHẠC MỚI -->
+    <div id="add-music-modal" class="fixed inset-0 z-[9999] bg-slate-900/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="glass-card max-w-md w-full p-6 rounded-3xl space-y-4 shadow-2xl relative text-slate-800 dark:text-slate-100">
+            <div class="flex items-center justify-between border-b-2 border-pink-200 dark:border-slate-700 pb-2">
+                <h3 class="text-base font-extrabold text-pink-700 dark:text-pink-400 flex items-center gap-2">
+                    <i class="fa-solid fa-compact-disc text-pink-600"></i> Thêm Bài Hát Mới Vào Playlist
+                </h3>
+                <button onclick="closeAddMusicModal()" class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 font-extrabold text-lg">✕</button>
+            </div>
+            
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-extrabold text-pink-800 dark:text-pink-300 mb-1">Tên bài hát:</label>
+                    <input type="text" id="new-song-name" placeholder="Ví dụ: Nhạc Lofi Chill..." class="w-full px-3 py-2 bg-white dark:bg-slate-800 dark:text-white border-2 border-pink-300 dark:border-slate-600 rounded-xl font-extrabold focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-extrabold text-pink-800 dark:text-pink-300 mb-1">Dán Link Nhạc (.mp3 hoặc Link trực tuyến):</label>
+                    <input type="text" id="new-song-url" placeholder="https://domain.com/audio.mp3" class="w-full px-3 py-2 bg-white dark:bg-slate-800 dark:text-white border-2 border-pink-300 dark:border-slate-600 rounded-xl font-mono font-extrabold focus:outline-none">
+                </div>
+                <div class="text-center text-slate-500 dark:text-slate-400 font-extrabold">HOẶC</div>
+                <div>
+                    <label class="block font-extrabold text-pink-800 dark:text-pink-300 mb-1">Chọn file nhạc từ máy tính (.mp3, .wav):</label>
+                    <input type="file" id="new-song-file" accept="audio/*" class="w-full text-xs text-slate-500 dark:text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-extrabold file:bg-pink-100 file:text-pink-700 dark:file:bg-slate-700 dark:file:text-pink-300 hover:file:bg-pink-200 cursor-pointer">
+                </div>
+            </div>
+
+            <div class="flex gap-2 pt-2">
+                <button onclick="addNewSongToPlaylist()" class="flex-1 py-2.5 bg-pink-600 hover:bg-pink-700 text-white rounded-xl font-extrabold shadow transition">Thêm vào Playlist 🎵</button>
+                <button onclick="closeAddMusicModal()" class="px-4 py-2.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl font-extrabold transition">Hủy</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CÀI ĐẶT ẢNH CHIBI KHI KÉO THẢ -->
+    <div id="chibi-avatar-modal" class="fixed inset-0 z-[9999] bg-slate-900/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="glass-card max-w-md w-full p-6 rounded-3xl space-y-4 shadow-2xl relative text-slate-800 dark:text-slate-100">
+            <div class="flex items-center justify-between border-b-2 border-pink-200 dark:border-slate-700 pb-2">
+                <h3 class="text-base font-extrabold text-pink-700 dark:text-pink-400 flex items-center gap-2">
+                    <i class="fa-solid fa-image text-pink-600"></i> Cài đặt Ảnh Chibi Kéo Thả
+                </h3>
+                <button onclick="closeChibiAvatarModal()" class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 font-extrabold text-lg">✕</button>
+            </div>
+            <div class="space-y-3 text-xs">
+                <p class="text-slate-600 dark:text-slate-300">Tải ảnh lên để thay đổi hình dạng bé Chibi di chuyển/kéo thả trên web:</p>
+                <div>
+                    <label class="block font-extrabold text-pink-800 dark:text-pink-300 mb-1">Chọn ảnh Chibi từ máy tính:</label>
+                    <input type="file" id="custom-chibi-file" accept="image/*" class="w-full text-xs text-slate-500 dark:text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-extrabold file:bg-pink-100 file:text-pink-700 dark:file:bg-slate-700 dark:file:text-pink-300 hover:file:bg-pink-200 cursor-pointer" onchange="uploadCustomChibi(event)">
+                </div>
+            </div>
+            <div class="flex justify-end pt-2">
+                <button onclick="closeChibiAvatarModal()" class="px-5 py-2.5 bg-pink-600 hover:bg-pink-700 text-white rounded-xl font-extrabold shadow transition">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="spam-overlay"></div>
+    <div id="egg-splatter-overlay"></div>
+    <div id="cleaning-cloth" title="Giữ và lướt khăn này để lau vết trứng (cần lau lướt 3 lần)">🧽</div>
+
+    <!-- CHIBI 1 (Đi dạo) -->
+    <div id="chibi-character" title="Bé Chibi đang đi dạo trên web! (Click phải để đổi ảnh)" oncontextmenu="openChibiAvatarModal(); return false;">
+        <div class="relative flex flex-col items-center">
+            <div id="chibi-held-box" class="hidden"></div>
+            <div id="chibi-dialog" class="absolute -top-10 bg-white dark:bg-slate-800 border-2 border-pink-400 dark:border-slate-600 text-pink-700 dark:text-pink-300 text-xs font-extrabold px-3 py-1 rounded-full shadow-lg whitespace-nowrap pointer-events-none transition-all duration-300">
+                WONDERHOI! ✨
+            </div>
+            <img id="chibi-img" src="" alt="Chibi Mascot" class="w-24 h-24 object-contain drop-shadow-xl pointer-events-none chibi-walking">
+        </div>
+    </div>
+
+    <!-- CHIBI 2 (Góc phải dưới) -->
+    <div id="fixed-chibi-container" onclick="handleFixedChibiClick()" title="Click vào tớ đi!">
+        <div id="fixed-chibi-bubble" class="fixed-speech-bubble">Chán rồi hả?</div>
+        <img id="fixed-chibi-img" src="https://i.ibb.co/3ykfLp6/chibi-normal.png" alt="Chibi Sitting" class="w-28 h-28 object-contain drop-shadow-xl">
+    </div>
+
+    <!-- HEADER & NHẠC NỀN -->
+    <header class="border-b-4 border-pink-300 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 backdrop-blur sticky top-0 z-50 shadow-lg py-2.5 px-4 transition-colors">
+        <div class="max-w-7xl mx-auto flex flex-col xl:flex-row items-center justify-between gap-3">
+            <div class="flex items-center space-x-3.5 w-full xl:w-auto justify-between xl:justify-start">
+                <div class="flex items-center space-x-3">
+                    <div class="p-2 bg-pink-100 dark:bg-slate-800 text-pink-700 dark:text-pink-400 rounded-2xl border-2 border-pink-400 dark:border-slate-600 shadow-md shrink-0">
+                        <i class="fa-solid fa-layer-group text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-extrabold text-base sm:text-lg md:text-xl text-pink-700 dark:text-pink-400 tracking-wide flex items-center gap-2 flex-wrap leading-tight">
+                            Mô phỏng Cấu trúc Dữ liệu 🌸
+                            <span class="text-xs px-2 py-0.5 rounded-full bg-pink-200 dark:bg-slate-800 text-pink-900 dark:text-pink-300 border border-pink-400 dark:border-slate-600 font-extrabold">Tin 12</span>
+                        </h1>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="toggleMainBanner()" class="p-2 rounded-2xl bg-pink-100 dark:bg-slate-800 text-pink-800 dark:text-pink-300 border-2 border-pink-400 dark:border-slate-600 shadow-md"><i class="fa-solid fa-eye-slash text-base" id="banner-toggle-icon"></i></button>
+                    <button onclick="toggleDarkMode()" class="xl:hidden p-2 rounded-2xl bg-pink-100 dark:bg-slate-800 text-pink-800 dark:text-pink-300 border-2 border-pink-400 dark:border-slate-600 shadow-md"><i class="fa-solid fa-moon dark:hidden text-base"></i><i class="fa-solid fa-sun hidden dark:inline text-base"></i></button>
+                </div>
+            </div>
+
+            <!-- THANH ĐIỀU KHIỂN NHẠC NỀN & NÚT ẨN/HIỆN PHẦN PHÁT NHẠC -->
+            <div class="flex items-center gap-2 w-full xl:w-auto justify-center flex-wrap bg-pink-100/90 dark:bg-slate-800/90 p-2 rounded-2xl border-2 border-pink-300 dark:border-slate-700 shadow-sm text-xs transition-colors">
+                <button onclick="togglePlayMusic()" id="btn-audio-play" class="w-8 h-8 bg-pink-600 text-white rounded-xl flex items-center justify-center shadow transition hover:scale-105" title="Bật/Tắt nhạc">
+                    <i class="fa-solid fa-play"></i>
+                </button>
+
+                <div id="music-expanded-controls" class="flex items-center gap-2 flex-wrap">
+                    <select id="playlist-select" onchange="changeTrackByIndex(this.value)" class="bg-white dark:bg-slate-700 text-pink-900 dark:text-pink-200 border border-pink-400 dark:border-slate-600 rounded-xl px-2 py-1 text-xs font-extrabold focus:outline-none cursor-pointer max-w-[130px]">
+                        <!-- JS điền -->
+                    </select>
+
+                    <button onclick="openAddMusicModal()" class="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-extrabold shadow transition flex items-center gap-1" title="Thêm nhạc mới">
+                        <i class="fa-solid fa-plus"></i> Thêm nhạc
+                    </button>
+
+                    <div class="flex items-center gap-1.5">
+                        <span id="current-time-text" class="text-[10px] font-mono font-extrabold text-pink-900 dark:text-pink-300">0:00</span>
+                        <input type="range" id="seek-slider" min="0" max="100" value="0" class="w-16 accent-pink-600 cursor-pointer h-1.5" oninput="seekAudio(this.value)" title="Tua thời gian">
+                        <span id="duration-text" class="text-[10px] font-mono font-extrabold text-pink-900 dark:text-pink-300">0:00</span>
+                    </div>
+
+                    <div class="flex items-center gap-1">
+                        <i class="fa-solid fa-volume-high text-pink-700 dark:text-pink-400 text-xs"></i>
+                        <input type="range" id="volume-slider" min="0" max="1" step="0.05" value="0.5" class="w-10 accent-pink-600 cursor-pointer h-1.5" oninput="changeVolume(this.value)" title="Âm lượng">
+                    </div>
+
+                    <button onclick="cyclePlayMode()" id="btn-play-mode" class="px-2 py-1 bg-white dark:bg-slate-700 text-pink-800 dark:text-pink-300 border border-pink-400 dark:border-slate-600 rounded-lg text-[10px] font-extrabold shadow-sm transition" title="Chế độ phát">
+                        🔁 Lặp 1
+                    </button>
+
+                    <button onclick="nextTrack()" class="p-1.5 bg-pink-200 dark:bg-slate-700 text-pink-900 dark:text-pink-300 rounded-lg hover:bg-pink-300 dark:hover:bg-slate-600 transition" title="Bài tiếp theo">
+                        <i class="fa-solid fa-forward-step"></i>
+                    </button>
+                </div>
+
+                <button onclick="toggleMusicDetails()" id="btn-toggle-music-panel" class="px-2 py-1 bg-pink-200 dark:bg-slate-700 text-pink-800 dark:text-pink-300 rounded-xl text-xs font-extrabold shadow transition flex items-center gap-1" title="Ẩn/Hiện chi tiết nhạc">
+                    <i class="fa-solid fa-chevron-left" id="music-toggle-icon"></i> <span id="music-toggle-label">Ẩn</span>
+                </button>
+            </div>
+
+            <!-- CÁC TAB CHỨC NĂNG -->
+            <div class="flex flex-wrap bg-pink-100/90 dark:bg-slate-800/90 p-1.5 rounded-2xl border-2 border-pink-300 dark:border-slate-700 gap-1.5 justify-center transition-colors">
+                <button id="btn-tab-stack" onclick="switchMode('stack')" class="flex items-center space-x-2 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-extrabold transition bg-pink-600 text-white shadow-md"><i class="fa-solid fa-bars-staggered"></i> Stack</button>
+                <button id="btn-tab-queue" onclick="switchMode('queue')" class="flex items-center space-x-2 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-extrabold transition text-slate-700 dark:text-slate-300 hover:text-pink-700"><i class="fa-solid fa-right-left"></i> Queue</button>
+                <button id="btn-tab-realqueue" onclick="switchMode('realqueue')" class="flex items-center space-x-2 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-extrabold transition text-slate-700 dark:text-slate-300 hover:text-pink-700"><i class="fa-solid fa-users text-emerald-600 text-sm"></i> Thực tế Queue</button>
+                <button id="btn-tab-bracket" onclick="switchMode('bracket')" class="flex items-center space-x-2 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-extrabold transition text-slate-700 dark:text-slate-300 hover:text-pink-700"><i class="fa-solid fa-code text-amber-600 text-sm"></i> Ngoặc Hợp lệ</button>
+                <button id="btn-tab-game" onclick="switchMode('game')" class="flex items-center space-x-2 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-extrabold transition text-amber-950 dark:text-amber-300 bg-amber-200 dark:bg-amber-900/60 border-2 border-amber-400 dark:border-amber-600 shadow-md animate-pulse"><i class="fa-solid fa-gamepad text-amber-700 dark:text-amber-400 text-sm"></i> Mini-game Hamburger 🍔</button>
+            </div>
+            <button onclick="toggleDarkMode()" class="hidden xl:flex p-2.5 rounded-2xl bg-pink-100 dark:bg-slate-800 text-pink-800 dark:text-pink-300 border-2 border-pink-400 dark:border-slate-600 shadow-md hover:scale-105 transition items-center justify-center"><i class="fa-solid fa-moon dark:hidden text-base"></i><i class="fa-solid fa-sun hidden dark:inline text-base"></i></button>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto p-3 md:p-5 flex flex-col gap-4 transition-all duration-300">
+        <div class="glass-card rounded-3xl p-4 md:p-5 border-3 border-pink-300 dark:border-slate-700 sticky top-16 z-40 shadow-xl">
+            <div class="flex items-center justify-between pb-2.5 border-b-2 border-pink-200 dark:border-slate-700">
+                <h2 class="text-sm sm:text-base font-extrabold uppercase tracking-wider text-pink-700 dark:text-pink-400 flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-pink-600"></i> Bảng Điều Khiển Thao Tác
+                </h2>
+                <div id="speed-control-box" class="flex items-center space-x-3">
+                    <div class="flex items-center space-x-2 bg-pink-100 dark:bg-slate-800 px-3 py-1 rounded-2xl border-2 border-pink-300 dark:border-slate-700">
+                        <span class="text-xs text-pink-800 dark:text-pink-300 font-extrabold"><i class="fa-solid fa-gauge-high"></i> Tốc độ:</span>
+                        <input type="range" id="speed-slider" min="200" max="1500" value="800" step="100" class="w-16 sm:w-20 accent-pink-600 cursor-pointer h-1.5">
+                    </div>
+                    <button onclick="toggleControls()" class="text-xs bg-pink-100 dark:bg-slate-800 hover:bg-pink-200 dark:hover:bg-slate-700 text-pink-800 dark:text-pink-300 px-3 py-1.5 rounded-2xl font-extrabold transition flex items-center gap-1.5 shadow-md border-2 border-pink-300 dark:border-slate-700">
+                        <i class="fa-solid fa-chevron-up text-sm" id="toggle-icon"></i> <span id="toggle-text" class="hidden sm:inline">Ẩn tùy chọn phụ</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="pt-3 space-y-3">
+                <div id="controls-stack" class="space-y-3">
+                    <div class="flex flex-wrap items-center gap-2.5">
+                        <div class="relative flex-1 min-w-[160px]">
+                            <input type="text" id="stack-input" placeholder="Nhập giá trị (vd: 15, 'A')..." class="w-full bg-white dark:bg-slate-800 dark:text-white border-3 border-pink-300 dark:border-slate-600 rounded-2xl px-4 py-2.5 text-sm font-extrabold text-slate-900 placeholder-pink-400 dark:placeholder-slate-500 font-mono shadow-inner" onkeypress="if(event.key==='Enter') doPush()">
+                        </div>
+                        <button onclick="doPush()" class="px-4 py-2.5 bg-sky-600 hover:bg-sky-700 active:scale-95 text-white font-extrabold text-xs sm:text-sm rounded-2xl transition shadow-lg flex items-center gap-1.5"><i class="fa-solid fa-arrow-down-to-bracket text-base"></i> Push (append)</button>
+                        <button onclick="doPop()" class="px-4 py-2.5 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-extrabold text-xs sm:text-sm rounded-2xl transition shadow-lg flex items-center gap-1.5"><i class="fa-solid fa-arrow-up-from-bracket text-base"></i> Pop (pop)</button>
+                    </div>
+                </div>
+                <div id="controls-queue" class="space-y-3 hidden">
+                    <div class="flex flex-wrap items-center gap-2.5">
+                        <div class="relative flex-1 min-w-[160px]">
+                            <input type="text" id="queue-input" placeholder="Nhập giá trị..." class="w-full bg-white dark:bg-slate-800 dark:text-white border-3 border-emerald-300 dark:border-slate-600 rounded-2xl px-4 py-2.5 text-sm font-extrabold text-slate-900 placeholder-emerald-400 font-mono shadow-inner" onkeypress="if(event.key==='Enter') doEnqueue()">
+                        </div>
+                        <button onclick="doEnqueue()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-extrabold text-xs sm:text-sm rounded-2xl transition shadow-lg flex items-center gap-1.5"><i class="fa-solid fa-right-to-bracket text-base"></i> Enqueue (vào Rear)</button>
+                        <button onclick="doDequeue()" class="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-extrabold text-xs sm:text-sm rounded-2xl transition shadow-lg flex items-center gap-1.5"><i class="fa-solid fa-right-from-bracket text-base"></i> Dequeue (ra Front)</button>
+                    </div>
+                </div>
+                <div id="controls-realqueue" class="space-y-3 hidden">
+                    <div class="flex flex-wrap items-center gap-2.5">
+                        <button onclick="doRealEnqueue()" class="flex-1 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-extrabold text-sm rounded-2xl transition shadow-lg flex items-center justify-center gap-2"><i class="fa-solid fa-ticket text-base"></i> Lấy Số (Enqueue - Random Tên)</button>
+                        <button onclick="doRealDequeue()" class="flex-1 px-4 py-2.5 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-extrabold text-sm rounded-2xl transition shadow-lg flex items-center justify-center gap-2"><i class="fa-solid fa-bell text-base"></i> Mời quý khách tiếp theo</button>
+                    </div>
+                </div>
+                <div id="controls-bracket" class="space-y-3 hidden">
+                    <div class="flex flex-wrap items-center gap-2.5">
+                        <input type="text" id="bracket-input" value="{[(5+4)/(9-3)]}" placeholder="Nhập biểu thức ngoặc..." class="flex-1 bg-white dark:bg-slate-800 dark:text-white border-3 border-amber-300 dark:border-slate-600 rounded-2xl px-4 py-2.5 text-sm text-slate-900 code-font font-extrabold shadow-inner">
+                        <button onclick="startBracketCheck()" class="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white font-extrabold text-sm rounded-2xl transition shadow-lg flex items-center gap-2"><i class="fa-solid fa-play text-base"></i> Kiểm tra tính hợp lệ</button>
+                    </div>
+                </div>
+                <div id="controls-game" class="space-y-2 hidden">
+                    <div class="flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm font-extrabold text-amber-950 dark:text-amber-300 bg-amber-200 dark:bg-amber-900/60 px-3 py-2 rounded-2xl border-2 border-amber-400 dark:border-amber-600 shadow-md">
+                        <span class="flex items-center gap-1.5"><i class="fa-solid fa-burger text-amber-700 dark:text-amber-400 text-base"></i> Quán Hamburger & Nước Chibi</span>
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            <span class="text-xs text-amber-900 dark:text-amber-300">Độ khó:</span>
+                            <select id="game-difficulty-select" class="bg-white dark:bg-slate-800 text-amber-900 dark:text-amber-200 border border-amber-400 dark:border-slate-600 rounded-xl px-2 py-1 text-xs font-extrabold focus:outline-none shadow-sm cursor-pointer">
+                                <option value="easy">🟢 Dễ (10 khách, 40s/khách)</option>
+                                <option value="medium">🟡 Trung bình (20 khách, 30s/khách)</option>
+                                <option value="hard">🟠 Khó (35 khách, 20s/khách)</option>
+                                <option value="wonderhoy" selected>✨ Wonderhoy!! (50 khách, 15s/khách)</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span id="game-score-display" class="bg-amber-600 text-white px-2.5 py-0.5 rounded-full shadow text-xs font-extrabold">Điểm: 0 🌟</span>
+                            <span id="game-patience-display" class="bg-rose-600 text-white px-2.5 py-0.5 rounded-full shadow text-xs font-extrabold">Mất kiên nhẫn: 0/15 (0/5) 😡</span>
+                            <span id="game-timer" class="px-3 py-0.5 bg-sky-600 text-white rounded-full font-mono font-extrabold text-xs sm:text-sm shadow">⏳ 10:00</span>
+                        </div>
+                    </div>
+                    <div id="start-game-btn-container" class="flex items-center justify-between gap-2">
+                        <button id="btn-start-game-main" onclick="startGame()" class="flex-1 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-md transition flex items-center justify-center gap-2 animate-bounce">
+                            <i class="fa-solid fa-play"></i> Bắt đầu vòng mới (10 Phút) - Vào Game!
+                        </button>
+                    </div>
+                </div>
+
+                <div id="collapsible-extra-controls" class="pt-2 border-t-2 border-pink-100 dark:border-slate-800 flex flex-wrap items-center gap-2">
+                    <div id="stack-extra-btns" class="flex flex-wrap items-center gap-2 w-full">
+                        <button onclick="doTop()" class="px-3 py-1.5 bg-sky-100 dark:bg-slate-800 hover:bg-sky-200 dark:hover:bg-slate-700 text-sky-800 dark:text-sky-300 border-2 border-sky-300 dark:border-slate-700 rounded-xl text-xs font-extrabold transition flex items-center gap-1 shadow-sm"><i class="fa-regular fa-eye"></i> Top (S[-1])</button>
+                        <button onclick="doIsEmptyStack()" class="px-3 py-1.5 bg-purple-100 dark:bg-slate-800 hover:bg-purple-200 dark:hover:bg-slate-700 text-purple-800 dark:text-purple-300 border-2 border-purple-300 dark:border-slate-700 rounded-xl text-xs font-extrabold transition flex items-center gap-1 shadow-sm"><i class="fa-solid fa-circle-question"></i> isEmptyStack()</button>
+                        <button onclick="generateRandomData()" class="px-3 py-1.5 bg-pink-100 dark:bg-slate-800 hover:bg-pink-200 dark:hover:bg-slate-700 text-pink-800 dark:text-pink-300 border-2 border-pink-300 dark:border-slate-700 rounded-xl text-xs font-extrabold transition flex items-center gap-1 shadow-sm"><i class="fa-solid fa-dice"></i> Sinh 3 số ngẫu nhiên</button>
+                        <button onclick="clearStructures()" class="px-3 py-1.5 bg-rose-100 dark:bg-slate-800 hover:bg-rose-200 dark:hover:bg-slate-700 text-rose-700 dark:text-rose-300 border-2 border-rose-300 dark:border-slate-700 rounded-xl text-xs font-extrabold transition flex items-center gap-1 ml-auto shadow-sm"><i class="fa-solid fa-trash-can"></i> Xóa sạch</button>
+                    </div>
+                    <div id="queue-extra-btns" class="hidden flex-wrap items-center gap-2 w-full">
+                        <button onclick="generateRandomData()" class="px-3 py-1.5 bg-emerald-100 dark:bg-slate-800 hover:bg-emerald-200 dark:hover:bg-slate-700 text-emerald-800 dark:text-emerald-300 border-2 border-emerald-300 dark:border-slate-700 rounded-xl text-xs font-extrabold transition flex items-center gap-1 shadow-sm"><i class="fa-solid fa-dice"></i> Sinh dữ liệu ngẫu nhiên</button>
+                        <button onclick="clearStructures()" class="px-3 py-1.5 bg-rose-100 dark:bg-slate-800 hover:bg-rose-200 dark:hover:bg-slate-700 text-rose-700 dark:text-rose-300 border-2 border-rose-300 dark:border-slate-700 rounded-xl text-xs font-extrabold transition flex items-center gap-1 ml-auto shadow-sm"><i class="fa-solid fa-trash-can"></i> Xóa sạch</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 w-full">
+            <div id="left-panel" class="lg:col-span-7 flex flex-col space-y-4">
+                <div id="simulation-display-card" class="glass-card rounded-3xl p-4 md:p-6 border-3 border-pink-300 dark:border-slate-700 flex-1 flex flex-col justify-between min-h-[420px] relative overflow-visible shadow-xl">
+                    <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center space-x-3">
+                            <span id="display-mode-badge" class="px-3.5 py-1 rounded-full text-xs sm:text-sm font-extrabold bg-sky-200 dark:bg-slate-800 text-sky-900 dark:text-sky-300 border-2 border-sky-400 dark:border-slate-600 shadow-sm">NGĂN XẾP (STACK)</span>
+                            <span id="display-rule-badge" class="text-xs sm:text-sm text-slate-700 dark:text-slate-300 font-extrabold flex items-center gap-1.5"><i class="fa-solid fa-circle-info text-sky-600 text-base"></i> LIFO: Vào Sau - Ra Trước</span>
+                        </div>
+                        <div id="element-counter" class="text-xs sm:text-sm code-font text-pink-800 dark:text-pink-300 font-extrabold bg-pink-100 dark:bg-slate-800 px-3.5 py-1 rounded-full border-2 border-pink-300 dark:border-slate-700 shadow-sm">
+                            len(S) = <span id="len-val" class="text-pink-700 dark:text-pink-400 font-extrabold">0</span>
+                        </div>
+                    </div>
+
+                    <div id="status-alert" class="hidden transition-all duration-300 my-2 p-3 rounded-2xl border-3 text-xs sm:text-sm font-extrabold flex items-center justify-between shadow-lg">
+                        <div class="flex items-center space-x-2.5">
+                            <i id="status-icon" class="fa-solid fa-triangle-exclamation text-lg"></i>
+                            <span id="status-text"></span>
+                        </div>
+                        <span id="status-sub" class="text-xs font-extrabold code-font opacity-95"></span>
+                    </div>
+
+                    <div id="visual-stack-container" class="flex-1 flex flex-col items-center justify-end py-2">
+                        <div id="stack-tube-box" class="stack-tube w-64 min-h-[260px] max-h-[320px] flex flex-col-reverse items-center justify-start p-3 gap-2.5 overflow-y-auto relative shadow-xl">
+                            <div id="stack-items-list" class="w-full flex flex-col-reverse items-center gap-2.5"></div>
+                        </div>
+                        <div class="mt-3 text-xs sm:text-sm text-slate-700 dark:text-slate-300 font-extrabold flex items-center gap-6">
+                            <span class="flex items-center gap-1"><i class="fa-solid fa-arrow-up text-sky-600 text-base"></i> Đỉnh (Top): Index len(S)-1</span>
+                            <span class="flex items-center gap-1"><i class="fa-solid fa-anchor text-pink-600 text-base"></i> Đáy (Bottom): Index 0</span>
+                        </div>
+                    </div>
+
+                    <div id="visual-queue-container" class="flex-1 flex flex-col items-center justify-center py-4 hidden">
+                        <div class="w-full max-w-xl flex items-center justify-between mb-2 px-3 text-xs sm:text-sm font-extrabold">
+                            <span class="text-rose-700 dark:text-rose-400 flex items-center gap-1"><i class="fa-solid fa-arrow-left text-base"></i> FRONT (Dequeue) [Trái]</span>
+                            <span class="text-emerald-700 dark:text-emerald-400 flex items-center gap-1">REAR (Enqueue) [Phải] <i class="fa-solid fa-arrow-right text-base"></i></span>
+                        </div>
+                        <div id="queue-pipe-box" class="queue-pipe w-full max-w-xl h-28 flex items-center justify-start px-4 gap-3 overflow-x-auto relative shadow-xl">
+                            <div id="queue-items-list" class="flex items-center gap-3"></div>
+                        </div>
+                    </div>
+
+                    <div id="visual-realqueue-container" class="flex-1 flex flex-col justify-center py-2 hidden">
+                        <div class="w-full grid grid-cols-1 md:grid-cols-12 gap-4 items-stretch">
+                            <div class="md:col-span-5 bg-gradient-to-b from-emerald-100/40 dark:from-slate-800 to-teal-100/50 dark:to-slate-900 p-4 rounded-3xl border-3 border-emerald-500 flex flex-col items-center justify-between text-center relative shadow-xl">
+                                <div class="w-full flex justify-between items-center text-xs font-extrabold text-emerald-900 dark:text-emerald-300 border-b-2 border-emerald-200 dark:border-slate-700 pb-2">
+                                    <span class="flex items-center gap-1.5"><i class="fa-solid fa-shop text-emerald-600 text-base"></i> Quầy Giao Dịch Số 1</span>
+                                    <span class="px-2.5 py-0.5 rounded-full bg-emerald-300 dark:bg-slate-700 text-emerald-950 dark:text-emerald-200 font-extrabold text-xs">Trực tiếp</span>
+                                </div>
+                                <div class="my-3 flex flex-col items-center relative">
+                                    <div id="counter-chibi-dialog" class="bg-emerald-600 text-white text-xs font-extrabold px-3 py-1 rounded-full shadow-lg mb-2 animate-bounce">Sẵn sàng phục vụ! 🌸</div>
+                                    <div class="w-28 h-28 rounded-full bg-emerald-100/90 dark:bg-slate-800 border-4 border-emerald-500 flex items-center justify-center p-2 shadow-xl relative overflow-hidden">
+                                        <img id="counter-chibi-img" src="" alt="Chibi Staff" class="w-full h-full object-contain scale-110 drop-shadow-md">
+                                    </div>
+                                </div>
+                                <div class="w-full py-2 px-3 rounded-2xl border-3 border-emerald-600 bg-emerald-950 text-emerald-100 font-extrabold text-xs shadow-inner">
+                                    <span id="current-serving-status" class="text-emerald-300 font-mono">[ Đang trống ]</span>
+                                </div>
+                            </div>
+                            <div class="md:col-span-7 bg-white dark:bg-slate-800 p-4 rounded-3xl border-3 border-emerald-400 dark:border-slate-600 flex flex-col justify-between shadow-xl relative overflow-hidden">
+                                <div class="flex items-center justify-between pb-2 border-b-2 border-emerald-100 dark:border-slate-700">
+                                    <span class="text-xs font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-1.5"><i class="fa-solid fa-users text-emerald-600 text-base"></i> Phòng chờ FIFO:</span>
+                                    <span id="realqueue-count" class="text-xs font-extrabold text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-slate-700 px-3 py-1 rounded-full border-2 border-emerald-300 dark:border-slate-600 shadow-sm">0 người chờ</span>
+                                </div>
+                                <div id="realqueue-list" class="min-h-[110px] my-3 flex items-center gap-3 overflow-x-auto p-2.5 bg-emerald-50/80 dark:bg-slate-900 rounded-2xl border-2 border-emerald-300 dark:border-slate-700 shadow-inner"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="visual-bracket-container" class="flex-1 flex flex-col items-center justify-start py-2 hidden space-y-4">
+                        <div class="w-full bg-amber-50 dark:bg-slate-800 p-4 rounded-2xl border-3 border-amber-300 dark:border-slate-700 shadow-xl flex flex-col space-y-2">
+                            <div class="text-xs sm:text-sm text-amber-950 dark:text-amber-200 font-extrabold flex justify-between items-center">
+                                <span>Chuỗi biểu thức đang duyệt:</span>
+                                <span id="bracket-status-badge" class="px-3 py-1 rounded-full bg-emerald-600 text-white text-xs font-extrabold shadow-md">● HỢP LỆ</span>
+                            </div>
+                            <div id="bracket-expr-display" class="flex flex-wrap justify-center items-center gap-2 text-xl sm:text-2xl font-extrabold code-font tracking-wider py-3 bg-white dark:bg-slate-900 rounded-2xl border-2 border-amber-300 dark:border-slate-700 shadow-inner"></div>
+                        </div>
+                        <div class="w-full grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                            <div class="md:col-span-5 flex flex-col items-center">
+                                <span class="text-xs font-extrabold text-sky-900 dark:text-sky-300 bg-sky-100 dark:bg-slate-800 px-3 py-1 rounded-full border-2 border-sky-300 dark:border-slate-700 mb-2 shadow-sm">Ngăn xếp chứa ngoặc mở S</span>
+                                <div id="bracket-stack-tube" class="stack-tube w-40 h-48 flex flex-col-reverse items-center justify-start p-2.5 gap-1.5 overflow-y-auto shadow-xl">
+                                    <div id="bracket-stack-items" class="w-full flex flex-col-reverse items-center gap-1.5"></div>
+                                </div>
+                            </div>
+                            <div class="md:col-span-7 bg-slate-900 text-white p-4 rounded-2xl border-3 border-slate-700 shadow-xl font-sans space-y-2 text-xs font-extrabold">
+                                <div class="font-extrabold text-amber-300 flex items-center gap-2 text-sm border-b-2 border-slate-700 pb-1.5"><i class="fa-solid fa-shield-halved text-amber-400 text-base"></i> Quy tắc duyệt ngoặc:</div>
+                                <div class="space-y-1.5 pt-1">
+                                    <div class="flex items-center gap-2"><span class="text-emerald-400">↓ Gặp ( [ { :</span><span class="bg-slate-800 px-2 py-0.5 rounded text-indigo-200">Push vào Stack</span></div>
+                                    <div class="flex items-center gap-2"><span class="text-amber-400">↑ Gặp ) ] } :</span><span class="bg-slate-800 px-2 py-0.5 rounded text-indigo-200">Pop từ Stack & Kiểm tra</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mini-game Hamburger Visual -->
+                    <div id="visual-game-container" class="flex-1 flex flex-col py-1 hidden space-y-3">
+                        <div id="game-active-status-bar" class="hidden w-full bg-amber-200 dark:bg-amber-900/80 p-2.5 rounded-2xl border-2 border-amber-400 dark:border-amber-600 shadow-md flex items-center justify-between text-xs sm:text-sm font-extrabold text-amber-950 dark:text-amber-200">
+                            <span id="active-game-info" class="flex items-center gap-2">🔥 Đang chơi chế độ...</span>
+                            <button onclick="quitGameToMenu()" class="px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs shadow transition">⏹️ Kết thúc / Chọn lại độ khó</button>
+                        </div>
+                        <div class="w-full bg-amber-50/90 dark:bg-slate-800 p-3 rounded-2xl border-2 border-amber-300 dark:border-slate-700 shadow-md flex flex-col gap-2 relative">
+                            <div class="flex items-center justify-between text-xs sm:text-sm text-amber-950 dark:text-amber-200 font-extrabold">
+                                <span class="flex items-center gap-1.5"><i class="fa-solid fa-users text-amber-600 text-base"></i> Khách gọi món (Queue - FIFO):</span>
+                                
+                                <div id="recipe-dropdown-container" class="relative inline-block">
+                                    <button id="recipe-toggle-btn" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white border-2 border-amber-600 rounded-2xl text-xs sm:text-sm font-extrabold flex items-center gap-2 transition shadow-lg cursor-pointer">
+                                        <i class="fa-solid fa-book-open text-base"></i> 📖 Xem Hướng dẫn Công thức Chuẩn 🍔🥤
+                                    </button>
+                                    
+                                    <div id="recipe-popup-box" class="absolute right-0 top-full mt-2 hidden w-[320px] sm:w-[400px] p-5 bg-white dark:bg-slate-900 border-4 border-amber-500 rounded-3xl shadow-2xl z-50 text-xs sm:text-sm font-extrabold space-y-2.5 text-slate-800 dark:text-slate-100">
+                                        <div class="text-amber-700 dark:text-amber-400 font-extrabold text-base border-b-2 border-amber-200 dark:border-slate-700 pb-1.5 flex items-center justify-between">
+                                            <span class="flex items-center gap-2"><i class="fa-solid fa-list-check text-amber-600"></i> BẢNG CÔNG THỨC CHUẨN:</span>
+                                            <span class="text-[10px] text-slate-400 font-normal">(Click ngoài để đóng)</span>
+                                        </div>
+                                        <div class="p-2 bg-amber-50 dark:bg-slate-800 rounded-xl border border-amber-300 dark:border-slate-700">🍔 <b>Hamburger thịt:</b><br><span class="text-slate-600 dark:text-slate-300 text-xs font-normal">Vỏ bánh + Rau + Cà chua + Phô mai + Thịt + Vỏ bánh</span></div>
+                                        <div class="p-2 bg-amber-50 dark:bg-slate-800 rounded-xl border border-amber-300 dark:border-slate-700">🧀 <b>Hamburger ko thịt:</b><br><span class="text-slate-600 dark:text-slate-300 text-xs font-normal">Vỏ bánh + Rau + Cà chua + Phô mai + Vỏ bánh</span></div>
+                                        <div class="p-2 bg-amber-50 dark:bg-slate-800 rounded-xl border border-amber-300 dark:border-slate-700">🥩 <b>Hamburger ko đồ chua:</b><br><span class="text-slate-600 dark:text-slate-300 text-xs font-normal">Vỏ bánh + Phô mai + Thịt + Vỏ bánh</span></div>
+                                        <div class="p-2 bg-amber-50 dark:bg-slate-800 rounded-xl border border-amber-300 dark:border-slate-700">🍞 <b>Hamburger ko:</b><br><span class="text-slate-600 dark:text-slate-300 text-xs font-normal">Vỏ bánh + Vỏ bánh</span></div>
+                                        <div class="p-2 bg-sky-50 dark:bg-slate-800 rounded-xl border border-sky-300 dark:border-slate-700">🥤 <b>Pepsi Messi:</b> Đồ uống giải khát</div>
+                                        <div class="p-2 bg-teal-50 dark:bg-slate-800 rounded-xl border border-teal-300 dark:border-slate-700">🥥 <b>Cocanado:</b> Đồ uống giải khát</div>
+                                    </div>
+                                </div>
+
+                            </div>
+                            <div id="game-customer-queue" class="flex items-center gap-2 min-h-[60px] p-1.5 bg-white dark:bg-slate-900 rounded-xl border border-amber-200 dark:border-slate-700 overflow-x-auto"></div>
+                        </div>
+
+                        <div class="w-full grid grid-cols-1 sm:grid-cols-12 gap-3 items-stretch">
+                            <div class="sm:col-span-5 flex flex-col items-center bg-amber-50/80 dark:bg-slate-800 p-2.5 rounded-2xl border-2 border-amber-300 dark:border-slate-700 shadow-md justify-between">
+                                <span class="text-xs font-extrabold text-amber-900 dark:text-amber-300 mb-1">🍔 Đĩa kẹp (Stack - LIFO)</span>
+                                <div id="game-stack-tube" class="stack-tube w-full max-w-[200px] h-36 flex flex-col-reverse items-center p-2 gap-1.5 overflow-y-auto shadow-inner"></div>
+                                <span class="text-[11px] text-emerald-700 dark:text-emerald-400 font-extrabold mt-1">⚡ Tự động gộp Bánh + Nước & Xếp tầng</span>
+                            </div>
+                            <div class="sm:col-span-7 flex flex-col justify-between bg-white dark:bg-slate-800 p-2.5 rounded-2xl border-2 border-amber-300 dark:border-slate-700 shadow-md space-y-2">
+                                <div>
+                                    <span class="text-xs font-extrabold text-slate-700 dark:text-slate-200 block mb-1">1. Thêm nguyên liệu & Đồ uống (Push vào Stack):</span>
+                                    <div id="game-control-panel-grid" class="flex flex-col gap-2 transition-all duration-500 relative">
+                                        <div id="ingredient-buttons-box" class="grid grid-cols-4 sm:grid-cols-7 gap-1.5 transition-all duration-500">
+                                            <button id="btn-ing-0" onclick="gamePushIngredient('Vỏ bánh')" class="py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-extrabold rounded-xl shadow-sm transition">🍞 Vỏ bánh</button>
+                                            <button id="btn-ing-1" onclick="gamePushIngredient('Thịt')" class="py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-extrabold rounded-xl shadow-sm transition">🥩 Thịt</button>
+                                            <button id="btn-ing-2" onclick="gamePushIngredient('Rau')" class="py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold rounded-xl shadow-sm transition">🥬 Rau</button>
+                                            <button id="btn-ing-3" onclick="gamePushIngredient('Cà Chua')" class="py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-extrabold rounded-xl shadow-sm transition">🍅 Cà Chua</button>
+                                            <button id="btn-ing-4" onclick="gamePushIngredient('Phô Mai')" class="py-2.5 bg-yellow-500 hover:bg-yellow-600 text-white text-xs font-extrabold rounded-xl shadow-sm transition">🧀 Phô Mai</button>
+                                            <button id="btn-ing-5" onclick="gamePushIngredient('Pepsi Messi')" class="py-2.5 bg-sky-600 hover:bg-sky-700 text-white text-xs font-extrabold rounded-xl shadow-sm transition">🥤 Pepsi Messi</button>
+                                            <button id="btn-ing-6" onclick="gamePushIngredient('Cocanado')" class="py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-extrabold rounded-xl shadow-sm transition">🥥 Cocanado</button>
+                                        </div>
+                                        <div id="serve-button-container" class="w-full">
+                                            <button id="btn-serve-customer" onclick="gameServeCustomer()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-extrabold rounded-xl shadow-lg transition flex items-center justify-center gap-2">
+                                                <i class="fa-solid fa-bell text-base"></i> PHỤC VỤ KHÁCH (GIAO MÓN TRÊN ĐỈNH)
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <span class="text-xs font-extrabold text-slate-700 dark:text-slate-200 block mb-1">2. Sửa lỗi & Dọn đĩa:</span>
+                                    <div class="flex items-center gap-1.5">
+                                        <button onclick="gamePopIngredient()" class="flex-1 py-2 bg-rose-100 dark:bg-slate-700 hover:bg-rose-200 dark:hover:bg-slate-600 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-slate-600 text-xs font-extrabold rounded-xl transition">🗑️ Rút lớp đỉnh (Pop)</button>
+                                        <button onclick="gameClearStack()" class="flex-1 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 text-xs font-extrabold rounded-xl transition">💥 Bỏ hết đĩa</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Code & Theory -->
+            <div id="right-panel" class="lg:col-span-5 flex flex-col space-y-4">
+                <div class="flex items-center justify-between px-1">
+                    <span class="text-xs sm:text-sm font-extrabold text-pink-700 dark:text-pink-400 flex items-center gap-1.5"><i class="fa-solid fa-code text-pink-600"></i> Bảng Mã Lệnh & SGK</span>
+                    <button onclick="toggleSidebar()" id="toggle-sidebar-btn" class="text-xs bg-pink-100 dark:bg-slate-800 hover:bg-pink-200 dark:hover:bg-slate-700 text-pink-800 dark:text-pink-300 px-3 py-1.5 rounded-2xl font-extrabold transition flex items-center gap-1.5 shadow-md border-2 border-pink-300 dark:border-slate-700"><i class="fa-solid fa-eye-slash text-sm" id="sidebar-toggle-icon"></i> <span id="sidebar-toggle-text">Ẩn bảng mã</span></button>
+                </div>
+
+                <div id="sidebar-content" class="flex flex-col space-y-4 transition-all duration-300">
+                    <div class="glass-card rounded-3xl p-4 md:p-5 border-3 border-pink-300 dark:border-slate-700 flex flex-col">
+                        <div class="flex items-center justify-between mb-3 pb-2 border-b-2 border-pink-200 dark:border-slate-700">
+                            <h2 class="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-pink-700 dark:text-pink-400 flex items-center gap-2"><i class="fa-brands fa-python text-amber-500"></i> Mã Python Tương Ứng</h2>
+                            <span class="text-xs px-2.5 py-0.5 rounded-full bg-pink-200 dark:bg-slate-800 text-pink-900 dark:text-pink-300 font-extrabold code-font border border-pink-400 dark:border-slate-600">Tin 12</span>
+                        </div>
+                        <div class="bg-slate-900 rounded-2xl p-4 border-3 border-slate-700 code-font text-xs sm:text-sm overflow-x-auto shadow-xl">
+                            <pre id="python-code-display" class="text-pink-300 leading-relaxed font-extrabold"></pre>
+                        </div>
+                        <div class="mt-3 p-3 bg-pink-100/90 dark:bg-slate-800 rounded-2xl border-2 border-pink-300 dark:border-slate-700 shadow-md">
+                            <span class="text-xs font-extrabold text-pink-900 dark:text-pink-300 flex items-center gap-1.5 mb-1"><i class="fa-solid fa-lightbulb text-amber-500 text-sm"></i> Ghi chú lý thuyết Python:</span>
+                            <p id="code-explanation" class="text-xs sm:text-sm text-slate-800 dark:text-slate-300 leading-normal font-extrabold">Phương thức <code class="text-sky-700 dark:text-sky-400 font-mono font-extrabold text-sm">append(x)</code> thêm phần tử vào đỉnh/cuối danh sách.</p>
+                        </div>
+                    </div>
+
+                    <div class="glass-card rounded-3xl p-4 md:p-5 border-3 border-pink-300 dark:border-slate-700 flex-1 flex flex-col">
+                        <h3 class="text-xs sm:text-sm font-extrabold text-pink-700 dark:text-pink-400 flex items-center gap-2 mb-3 pb-2 border-b-2 border-pink-200 dark:border-slate-700"><i class="fa-solid fa-book-bookmark text-pink-600"></i> Bộ hàm chuẩn theo Bài giảng SGK</h3>
+                        <div id="reference-functions" class="space-y-2 text-xs code-font text-slate-900 dark:text-slate-200 flex-1 overflow-y-auto pr-1">
+                            <div id="ref-stack-funcs" class="space-y-2">
+                                <div class="p-3 bg-sky-100 dark:bg-slate-800 rounded-2xl border-2 border-sky-300 dark:border-slate-700 shadow-md font-extrabold"><span class="text-sky-900 dark:text-sky-300 text-xs">def push(S, x): S.append(x)</span></div>
+                                <div class="p-3 bg-sky-100 dark:bg-slate-800 rounded-2xl border-2 border-sky-300 dark:border-slate-700 shadow-md font-extrabold"><span class="text-sky-900 dark:text-sky-300 text-xs">def pop(S): return S.pop()</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Script Logic -->
+    <script>
+        let PLAYLIST = [
+            { name: "1. Candy Planet", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
+            { name: "2. Wonderhoy! Theme", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" },
+            { name: "3. Lofi Chill Study", src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" }
+        ];
+
+        let currentTrackIdx = 0;
+        let playMode = 'loop-one';
+        let isMusicPlaying = false;
+        let audio;
+
+        let introAvatarSrc = "https://i.ibb.co/3ykfLp6/chibi-normal.png";
+        let customChibiMascotSrc = "https://static.wikia.nocookie.net/projectsekai/images/3/3f/Emu_Otori_Chibi.png";
+
+        const CHIBI_IMAGES = {
+            idle: 'chibi.png',
+            clicked: 'chibi-clicked.png',
+            spam: 'chibi-spam.png',
+            eating: 'chibi-eating.png',
+            counterStaff: 'chibi-staff.png',
+            fallback: 'https://static.wikia.nocookie.net/projectsekai/images/3/3f/Emu_Otori_Chibi.png'
+        };
+
+        const FIXED_CHIBI_CONFIG = {
+            image1: "https://i.ibb.co/3ykfLp6/chibi-normal.png",
+            image2: "https://i.ibb.co/6y4tWvJ/chibi-pain.png",
+            fallback: "https://static.wikia.nocookie.net/projectsekai/images/3/3f/Emu_Otori_Chibi.png"
+        };
+
+        // Danh sách lời thoại đầy đủ (giữ nguyên cũ và thêm các câu thoại mới theo yêu cầu)
+        const FIXED_RANDOM_DIALOGUES = [
+            "Gia Hào béo",
+            "Lai Lai Lai Lai Lai Lai Lai Lai Lai Lai Lai Lai Lai",
+            "Đinh Đinh Đinh Đinh Đinh Đinh Đinh Đinh Đinh Đinh Đinh",
+            "PV Bell",
+            "Worm Worm Worm",
+            "English or Spanish?",
+            "Skibidi",
+            "Sigmaboi",
+            "Bell",
+            "Rảnh tay quá he",
+            "Chán rồi hả",
+            "367",
+            "Polysaccharides",
+            "Còn bò biết bay hãy tin vào điều đó",
+            "Trong cấu trúc siêu hiển vi của nhiễm sắc thể ở sinh vật nhân thực, vùng xếp cuộn có đường kính là?"
+        ];
+
+        let fixedBubbleTimer = null;
+
+        function handleFixedChibiClick() {
+            const chibiImg = document.getElementById('fixed-chibi-img');
+            const bubble = document.getElementById('fixed-chibi-bubble');
+
+            chibiImg.src = FIXED_CHIBI_CONFIG.image2;
+            chibiImg.onerror = function() { this.src = FIXED_CHIBI_CONFIG.fallback; };
+
+            const randomText = FIXED_RANDOM_DIALOGUES[Math.floor(Math.random() * FIXED_RANDOM_DIALOGUES.length)];
+            bubble.textContent = randomText;
+            bubble.style.display = 'block';
+
+            if (fixedBubbleTimer) clearTimeout(fixedBubbleTimer);
+
+            setTimeout(() => { chibiImg.src = FIXED_CHIBI_CONFIG.image1; }, 300);
+
+            fixedBubbleTimer = setTimeout(() => { bubble.style.display = 'none'; }, 7000);
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            audio = document.getElementById('bg-audio');
+            initPlaylistDropdown();
+
+            audio.addEventListener('timeupdate', () => {
+                if (!isNaN(audio.duration)) {
+                    const progressPercent = (audio.currentTime / audio.duration) * 100;
+                    document.getElementById('seek-slider').value = progressPercent;
+                    document.getElementById('current-time-text').textContent = formatTime(audio.currentTime);
+                    document.getElementById('duration-text').textContent = formatTime(audio.duration);
+                }
+            });
+
+            audio.addEventListener('ended', () => {
+                if (playMode === 'auto-next') {
+                    nextTrack();
+                } else {
+                    audio.currentTime = 0;
+                    audio.play();
+                }
+            });
+
+            setChibiState('idle');
+            const counterImg = document.getElementById('counter-chibi-img');
+            counterImg.src = CHIBI_IMAGES.counterStaff;
+            counterImg.onerror = function() { this.src = CHIBI_IMAGES.fallback; };
+
+            document.getElementById('speed-slider').addEventListener('input', (e) => { animationSpeed = 1700 - parseInt(e.target.value); });
+            renderCurrentState();
+            updateCodeSnippet("S = Stack()\npush(S, 2)\npush(S, 5)\npush(S, 10)", "Khởi tạo danh sách ban đầu.");
+            initShimejiAI();
+            initCleaningClothDrag();
+            initRecipePopupInteraction();
+        });
+
+        function initPlaylistDropdown() {
+            const select = document.getElementById('playlist-select');
+            select.innerHTML = '';
+            PLAYLIST.forEach((track, idx) => {
+                const opt = document.createElement('option');
+                opt.value = idx;
+                opt.textContent = track.name;
+                select.appendChild(opt);
+            });
+        }
+
+        function playTrack(index) {
+            if (PLAYLIST.length === 0) return;
+            currentTrackIdx = index;
+            document.getElementById('playlist-select').value = currentTrackIdx;
+            audio.src = PLAYLIST[currentTrackIdx].src;
+            audio.volume = parseFloat(document.getElementById('volume-slider').value);
+            
+            audio.play().then(() => {
+                isMusicPlaying = true;
+                updateAudioUI();
+            }).catch(e => {
+                isMusicPlaying = false;
+                updateAudioUI();
+            });
+        }
+
+        function togglePlayMusic() {
+            if (!audio.src) {
+                playTrack(currentTrackIdx);
+                return;
+            }
+            if (isMusicPlaying) {
+                audio.pause();
+                isMusicPlaying = false;
+            } else {
+                audio.play().then(() => {
+                    isMusicPlaying = true;
+                }).catch(e => {});
+            }
+            updateAudioUI();
+        }
+
+        function changeTrackByIndex(idx) {
+            playTrack(parseInt(idx));
+        }
+
+        function nextTrack() {
+            if (PLAYLIST.length === 0) return;
+            currentTrackIdx = (currentTrackIdx + 1) % PLAYLIST.length;
+            playTrack(currentTrackIdx);
+        }
+
+        function changeVolume(val) {
+            audio.volume = parseFloat(val);
+        }
+
+        function seekAudio(val) {
+            if (!isNaN(audio.duration)) {
+                audio.currentTime = (val / 100) * audio.duration;
+            }
+        }
+
+        function cyclePlayMode() {
+            const modeBtn = document.getElementById('btn-play-mode');
+            if (playMode === 'loop-one') {
+                playMode = 'auto-next';
+                modeBtn.textContent = "🔀 Tự động";
+            } else {
+                playMode = 'loop-one';
+                modeBtn.textContent = "🔁 Lặp 1";
+            }
+        }
+
+        function updateAudioUI() {
+            const btn = document.getElementById('btn-audio-play');
+            if (isMusicPlaying) {
+                btn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+                btn.className = "w-8 h-8 bg-emerald-600 text-white rounded-xl flex items-center justify-center shadow transition hover:scale-105 animate-pulse";
+            } else {
+                btn.innerHTML = '<i class="fa-solid fa-play"></i>';
+                btn.className = "w-8 h-8 bg-pink-600 text-white rounded-xl flex items-center justify-center shadow transition hover:scale-105";
+            }
+        }
+
+        function formatTime(seconds) {
+            let mins = Math.floor(seconds / 60);
+            let secs = Math.floor(seconds % 60);
+            return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+
+        let isMusicDetailsHidden = false;
+        function toggleMusicDetails() {
+            isMusicDetailsHidden = !isMusicDetailsHidden;
+            const expandedBox = document.getElementById('music-expanded-controls');
+            const icon = document.getElementById('music-toggle-icon');
+            const label = document.getElementById('music-toggle-label');
+
+            if (isMusicDetailsHidden) {
+                expandedBox.classList.add('hidden');
+                icon.className = "fa-solid fa-chevron-right";
+                label.textContent = "Hiện";
+            } else {
+                expandedBox.classList.remove('hidden');
+                icon.className = "fa-solid fa-chevron-left";
+                label.textContent = "Ẩn";
+            }
+        }
+
+        function changeIntroAvatar(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const url = URL.createObjectURL(file);
+                document.getElementById('intro-chibi-avatar').src = url;
+            }
+        }
+
+        function openChibiAvatarModal() {
+            document.getElementById('chibi-avatar-modal').classList.remove('hidden');
+        }
+
+        function closeChibiAvatarModal() {
+            document.getElementById('chibi-avatar-modal').classList.add('hidden');
+        }
+
+        function uploadCustomChibi(event) {
+            const file = event.target.files[0];
+            if (file) {
+                customChibiMascotSrc = URL.createObjectURL(file);
+                setChibiState('idle');
+                alert("Đã cập nhật ảnh chibi di chuyển thành công!");
+            }
+        }
+
+        function openAddMusicModal() {
+            document.getElementById('add-music-modal').classList.remove('hidden');
+        }
+
+        function closeAddMusicModal() {
+            document.getElementById('add-music-modal').classList.add('hidden');
+            document.getElementById('new-song-name').value = '';
+            document.getElementById('new-song-url').value = '';
+            document.getElementById('new-song-file').value = '';
+        }
+
+        function addNewSongToPlaylist() {
+            const nameInput = document.getElementById('new-song-name').value.trim();
+            const urlInput = document.getElementById('new-song-url').value.trim();
+            const fileInput = document.getElementById('new-song-file').files[0];
+
+            let songName = nameInput || "Bài hát mới";
+
+            if (fileInput) {
+                const fileURL = URL.createObjectURL(fileInput);
+                if (!nameInput) songName = fileInput.name;
+                PLAYLIST.push({ name: `${PLAYLIST.length + 1}. ${songName}`, src: fileURL });
+                finalizeAddSong();
+            } else if (urlInput) {
+                PLAYLIST.push({ name: `${PLAYLIST.length + 1}. ${songName}`, src: urlInput });
+                finalizeAddSong();
+            } else {
+                alert("Vui lòng nhập link nhạc hoặc chọn file từ máy tính!");
+            }
+        }
+
+        function finalizeAddSong() {
+            initPlaylistDropdown();
+            closeAddMusicModal();
+            playTrack(PLAYLIST.length - 1);
+        }
+
+        function closeIntro(isWonderhoyMode) {
+            const overlay = document.getElementById('intro-overlay');
+            overlay.style.opacity = '0';
+            overlay.style.transform = 'scale(1.05)';
+            setTimeout(() => {
+                overlay.style.display = 'none';
+            }, 600);
+
+            playTrack(0);
+
+            if (isWonderhoyMode) {
+                switchMode('game');
+                setTimeout(() => {
+                    document.getElementById('game-difficulty-select').value = 'wonderhoy';
+                    startGame();
+                }, 300);
+            }
+        }
+
+        function setChibiState(stateKey) {
+            const chibiImg = document.getElementById('chibi-img');
+            if (customChibiMascotSrc) {
+                chibiImg.src = customChibiMascotSrc;
+            } else {
+                chibiImg.src = CHIBI_IMAGES[stateKey] || CHIBI_IMAGES.idle;
+            }
+            chibiImg.onerror = function() { this.src = CHIBI_IMAGES.fallback; };
+        }
+
+        let currentMode = 'stack', stackData = [2, 5, 10], queueData = ['A', 'B', 'C'];
+        let realQueueData = [{ ticket: 'A001', name: 'An' }, { ticket: 'A002', name: 'Bình' }, { ticket: 'A003', name: 'Chi' }, { ticket: 'A004', name: 'Dũng' }];
+        let ticketCounter = 5, animationSpeed = 800, isAnimating = false, isControlsCollapsed = false;
+        let isSidebarHidden = false, isSpamBlocked = false, isDarkMode = false, isMainBannerHidden = false, isGamePlaying = false;
+        
+        const randomNamesList = ["Hồng", "Nam", "Lan", "Tuấn", "Mai", "Đức", "Trang", "Khoa", "Linh", "Huy", "Thảo", "Phúc", "Ngọc", "Long", "Yến", "Khôi", "Quỳnh", "Trung", "Vy", "Bảo", "Hà", "Minh", "Thành", "Nhung"];
+        let currentMoveFrame = null, actionTimestamps = [];
+        
+        let gameScore = 0, gameTimer = 600, gameInterval = null, gameCustomers = [], gameStack = [];
+        let consecutiveLostCount = 0; 
+        let totalLostCount = 0;       
+        
+        let wonderhoyRandomEventInterval = null; 
+        let thrownButtonsList = [];
+        let thrownCountBeforeTimer = 0;
+        let returnTimeoutId = null;
+
+        const possibleDishes = [
+            'Hamburger thịt', 'Hamburger ko thịt', 'Hamburger ko đồ chua', 'Hamburger ko',
+            'Pepsi Messi', 'Cocanado',
+            'Hamburger thịt + Pepsi Messi', 'Hamburger ko thịt + Cocanado',
+            'Hamburger ko + Cocanado', 'Hamburger ko đồ chua + Pepsi Messi'
+        ];
+        const colors = ['bg-sky-200 dark:bg-slate-800 border-sky-500 text-sky-950 dark:text-sky-200', 'bg-purple-200 dark:bg-slate-800 border-purple-500 text-purple-950 dark:text-purple-200', 'bg-pink-200 dark:bg-slate-800 border-pink-500 text-pink-950 dark:text-pink-200', 'bg-teal-200 dark:bg-slate-800 border-teal-500 text-teal-950 dark:text-teal-200', 'bg-amber-200 dark:bg-slate-800 border-amber-500 text-amber-950 dark:text-amber-200', 'bg-rose-200 dark:bg-slate-800 border-rose-500 text-rose-950 dark:text-rose-200'];
+
+        function initRecipePopupInteraction() {
+            const container = document.getElementById('recipe-dropdown-container');
+            const btn = document.getElementById('recipe-toggle-btn');
+            const popup = document.getElementById('recipe-popup-box');
+            let isPinned = false;
+
+            btn.addEventListener('mouseenter', () => { if (!isPinned) popup.classList.remove('hidden'); });
+            container.addEventListener('mouseleave', () => { if (!isPinned) popup.classList.add('hidden'); });
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                isPinned = !isPinned;
+                if (isPinned) popup.classList.remove('hidden');
+                else popup.classList.add('hidden');
+            });
+            document.addEventListener('click', (e) => {
+                if (!container.contains(e.target)) { isPinned = false; popup.classList.add('hidden'); }
+            });
+        }
+
+        function toggleDarkMode() {
+            isDarkMode = !isDarkMode;
+            document.documentElement.classList.toggle('dark', isDarkMode);
+            document.body.classList.toggle('dark-mode', isDarkMode);
+        }
+
+        function toggleMainBanner() {
+            isMainBannerHidden = !isMainBannerHidden;
+            const headerTitleBox = document.querySelector('header h1').parentElement;
+            headerTitleBox.style.display = isMainBannerHidden ? 'none' : 'block';
+            document.getElementById('banner-toggle-icon').className = isMainBannerHidden ? 'fa-solid fa-eye text-base' : 'fa-solid fa-eye-slash text-base';
+        }
+
+        function checkSpamAction() {
+            if (isSpamBlocked) return true;
+            const now = Date.now();
+            actionTimestamps = actionTimestamps.filter(t => now - t < 1500);
+            actionTimestamps.push(now);
+            if (actionTimestamps.length >= 4) { triggerSpamBlock(); return true; }
+            return false;
+        }
+
+        async function triggerSpamBlock() {
+            if (currentMode === 'realqueue' || isGamePlaying) return;
+            isSpamBlocked = true; isAnimating = false;
+            if (currentMoveFrame) { cancelAnimationFrame(currentMoveFrame); currentMoveFrame = null; }
+
+            const overlay = document.getElementById('spam-overlay'), chibiImg = document.getElementById('chibi-img'), dialog = document.getElementById('chibi-dialog'), heldBox = document.getElementById('chibi-held-box');
+            heldBox.classList.add('hidden'); heldBox.innerHTML = '';
+            setChibiState('spam'); overlay.style.display = 'block'; isChibiWalking = false;
+            chibiImg.className = 'w-24 h-24 object-contain drop-shadow-xl pointer-events-none chibi-spamming';
+
+            await moveChibiTo(window.innerWidth / 2 - 48, window.innerHeight / 2 - 48);
+            dialog.textContent = "này đừng bấm nhanh quá bé chạy mệt đấy :(";
+            await new Promise(r => setTimeout(r, 3000));
+
+            setChibiState('idle');
+            chibiImg.className = 'w-24 h-24 object-contain drop-shadow-xl pointer-events-none chibi-walking';
+            dialog.textContent = "Hết mệt rồi, tiếp tục nào! ✨"; overlay.style.display = 'none';
+            isSpamBlocked = false; isChibiWalking = true; isChibiRestingState = false; actionTimestamps = [];
+        }
+
+        function toggleControls() {
+            isControlsCollapsed = !isControlsCollapsed;
+            document.getElementById('collapsible-extra-controls').classList.toggle('hidden', isControlsCollapsed);
+            document.getElementById('toggle-icon').className = isControlsCollapsed ? 'fa-solid fa-chevron-down' : 'fa-solid fa-chevron-up';
+            document.getElementById('toggle-text').textContent = isControlsCollapsed ? 'Hiện tùy chọn phụ' : 'Ẩn tùy chọn phụ';
+        }
+
+        function toggleSidebar() {
+            isSidebarHidden = !isSidebarHidden;
+            document.getElementById('sidebar-content').classList.toggle('hidden', isSidebarHidden);
+            document.getElementById('left-panel').className = isSidebarHidden ? "lg:col-span-12 flex flex-col space-y-4 transition-all duration-300" : "lg:col-span-7 flex flex-col space-y-4 transition-all duration-300";
+            document.getElementById('sidebar-toggle-icon').className = isSidebarHidden ? 'fa-solid fa-eye' : 'fa-solid fa-eye-slash';
+            document.getElementById('sidebar-toggle-text').textContent = isSidebarHidden ? 'Hiện bảng mã' : 'Ẩn bảng mã';
+        }
+
+        let chibiPosX = 50, chibiPosY = window.innerHeight - 150, isChibiWalking = true, chibiDirection = 1, isChibiDragging = false, isChibiForcedPause = false;
+        let chibiWalkTimer = 0, isChibiRestingState = false, restTimeoutId = null;
+
+        function initShimejiAI() {
+            const chibi = document.getElementById('chibi-character'), chibiImg = document.getElementById('chibi-img'), dialog = document.getElementById('chibi-dialog');
+            const normalQuotes = ["WONDERHOI! ✨", "Cùng khám phá Cấu trúc Dữ liệu nhé! 🌸", "Stack & Queue siêu dễ hiểu! 🚀", "Tin học 12 thật thú vị~ 💡", "Bạn có đang làm bài tập không thế? 📚"];
+            const dragQuotes = ["Oa, bay lên cao quá! 🎈", "Đang đưa tớ đi đâu thế? 🐾", "Thả tớ xuống đây nha! ~"];
+            let speed = 1.2, dragStartX, dragStartY, initialX, initialY;
+
+            chibi.style.left = chibiPosX + 'px'; chibi.style.top = chibiPosY + 'px';
+
+            setInterval(() => {
+                if (isChibiDragging || isChibiForcedPause || isSpamBlocked || isAnimating || currentMode === 'realqueue') return;
+                if (!isChibiRestingState && ++chibiWalkTimer >= 40) startChibiRest();
+            }, 1000);
+
+            function startChibiRest() {
+                isChibiRestingState = true; isChibiWalking = false; chibiWalkTimer = 0;
+                chibiImg.className = 'w-24 h-24 object-contain drop-shadow-xl pointer-events-none chibi-resting';
+                dialog.textContent = "nghỉ xíu hẹ hẹ hẹ";
+                if (restTimeoutId) clearTimeout(restTimeoutId);
+                restTimeoutId = setTimeout(wakeUpChibi, 15000);
+            }
+
+            function wakeUpChibi() {
+                if (restTimeoutId) { clearTimeout(restTimeoutId); restTimeoutId = null; }
+                isChibiRestingState = false; isChibiWalking = true; chibiWalkTimer = 0;
+                chibiImg.className = 'w-24 h-24 object-contain drop-shadow-xl pointer-events-none chibi-walking';
+                dialog.textContent = "Hết xỉu rồi, đi tiếp nào! ✨";
+            }
+
+            (function shimejiLoop() {
+                chibi.style.display = (currentMode === 'realqueue') ? 'none' : 'block';
+                if (!isChibiDragging && isChibiWalking && !isChibiRestingState && !isChibiForcedPause && !isSpamBlocked && !isAnimating) {
+                    chibiPosX += speed * chibiDirection;
+                    if (chibiPosX >= window.innerWidth - 120) { chibiDirection = -1; chibiImg.classList.add('chibi-flipped'); }
+                    else if (chibiPosX <= 20) { chibiDirection = 1; chibiImg.classList.remove('chibi-flipped'); }
+                    chibi.style.left = chibiPosX + 'px';
+                }
+                requestAnimationFrame(shimejiLoop);
+            })();
+
+            setInterval(() => {
+                if (!isChibiDragging && isChibiWalking && !isChibiRestingState && !isChibiForcedPause && !isSpamBlocked && !isAnimating && currentMode !== 'realqueue') {
+                    dialog.textContent = normalQuotes[Math.floor(Math.random() * normalQuotes.length)];
+                }
+            }, 5000);
+
+            chibi.addEventListener('click', () => {
+                if (isChibiDragging || isSpamBlocked || isAnimating || isChibiForcedPause) return;
+                isChibiForcedPause = true; isChibiWalking = false;
+                setChibiState('clicked'); chibiImg.classList.add('chibi-clicked'); dialog.textContent = "WONDERHOI?";
+                setTimeout(() => chibiImg.classList.remove('chibi-clicked'), 300);
+                setTimeout(() => {
+                    dialog.textContent = "YIPPEE!";
+                    setTimeout(() => { setChibiState('idle'); isChibiForcedPause = false; wakeUpChibi(); }, 800);
+                }, 800);
+            });
+
+            chibi.addEventListener('pointerdown', (e) => {
+                if (isSpamBlocked || isAnimating) return;
+                isChibiDragging = true; chibiImg.className = 'w-24 h-24 object-contain drop-shadow-xl pointer-events-none chibi-dragging';
+                dialog.textContent = dragQuotes[Math.floor(Math.random() * dragQuotes.length)];
+                dragStartX = e.clientX; dragStartY = e.clientY;
+                const rect = chibi.getBoundingClientRect(); initialX = rect.left; initialY = rect.top;
+                chibi.setPointerCapture(e.pointerId);
+            });
+
+            chibi.addEventListener('pointermove', (e) => {
+                if (!isChibiDragging) return;
+                chibiPosX = initialX + (e.clientX - dragStartX); chibiPosY = initialY + (e.clientY - dragStartY);
+                chibi.style.left = chibiPosX + 'px'; chibi.style.top = chibiPosY + 'px';
+            });
+
+            chibi.addEventListener('pointerup', (e) => {
+                if (!isChibiDragging) return;
+                isChibiDragging = false; chibiImg.className = 'w-24 h-24 object-contain drop-shadow-xl pointer-events-none chibi-walking';
+                wakeUpChibi(); chibi.releasePointerCapture(e.pointerId);
+            });
+        }
+
+        async function chibiFetchAndThrow(inputId, targetContainerId, val, actionType, callback) {
+            if (isSpamBlocked) return;
+            const chibiImg = document.getElementById('chibi-img'), dialog = document.getElementById('chibi-dialog'), heldBox = document.getElementById('chibi-held-box'), inputEl = document.getElementById(inputId);
+            isChibiWalking = false; chibiImg.className = 'w-24 h-24 object-contain drop-shadow-xl pointer-events-none';
+            dialog.textContent = `Lấy '${val}' từ ô nhập! ✨`;
+
+            let inputRect = inputEl.getBoundingClientRect(), destX = inputRect.left - 50, destY = inputRect.top - 20;
+            await moveChibiTo(destX, destY);
+            if (isSpamBlocked) return;
+
+            inputEl.value = '';
+            chibiImg.style.transform = chibiDirection === -1 ? 'scaleX(-1) scale(0.9)' : 'scale(0.9)';
+            await new Promise(r => setTimeout(r, animationSpeed * 0.35));
+            if (isSpamBlocked) return;
+
+            heldBox.innerHTML = `<div class="px-3 py-1.5 bg-pink-700 text-white font-mono font-extrabold text-sm rounded-xl shadow-xl border-2 border-white chibi-item-held">${val}</div>`;
+            heldBox.classList.remove('hidden'); chibiImg.style.transform = chibiDirection === -1 ? 'scaleX(-1)' : 'none';
+            dialog.textContent = `Mang quăng vào cấu trúc! 🚀`;
+
+            const targetRect = document.getElementById(targetContainerId).getBoundingClientRect();
+            destX = (actionType === 'queue-rear') ? targetRect.right - 40 : targetRect.left + (targetRect.width / 2) - 48;
+            destY = targetRect.top + (targetRect.height / 2) - 50;
+
+            await moveChibiTo(destX, destY);
+            if (isSpamBlocked) return;
+
+            chibiImg.style.transform = chibiDirection === -1 ? 'scaleX(-1) scale(1.15) rotate(-15deg)' : 'scale(1.15) rotate(15deg)';
+            await new Promise(r => setTimeout(r, animationSpeed * 0.4));
+            if (isSpamBlocked) return;
+
+            heldBox.classList.add('hidden'); heldBox.innerHTML = '';
+            chibiImg.style.transform = chibiDirection === -1 ? 'scaleX(-1)' : 'none';
+            if (callback) callback();
+
+            await new Promise(r => setTimeout(r, animationSpeed * 0.3));
+            if (!isSpamBlocked) { dialog.textContent = `Xong rồi nè! 🌸`; isChibiWalking = true; isChibiRestingState = false; chibiImg.className = 'w-24 h-24 object-contain drop-shadow-xl pointer-events-none chibi-walking'; }
+        }
+
+        async function chibiPopAndThrow(targetContainerId, val, actionType, callback) {
+            if (isSpamBlocked) return;
+            const chibiImg = document.getElementById('chibi-img'), dialog = document.getElementById('chibi-dialog'), heldBox = document.getElementById('chibi-held-box');
+            isChibiWalking = false; chibiImg.className = 'w-24 h-24 object-contain drop-shadow-xl pointer-events-none';
+            dialog.textContent = `Lấy '${val}' ra ngoài! 🗑️`;
+
+            const targetRect = document.getElementById(targetContainerId).getBoundingClientRect();
+            let destX = (actionType === 'queue-front') ? targetRect.left - 50 : targetRect.left + (targetRect.width / 2) - 48;
+            let destY = targetRect.top + (targetRect.height / 2) - 50;
+
+            await moveChibiTo(destX, destY);
+            if (isSpamBlocked) return;
+
+            chibiImg.style.transform = chibiDirection === -1 ? 'scaleX(-1) scale(0.9)' : 'scale(0.9)';
+            await new Promise(r => setTimeout(r, animationSpeed * 0.35));
+            if (isSpamBlocked) return;
+
+            heldBox.innerHTML = `<div class="px-3 py-1.5 bg-amber-700 text-white font-mono font-extrabold text-sm rounded-xl shadow-xl border-2 border-white chibi-item-held">${val}</div>`;
+            heldBox.classList.remove('hidden');
+            if (callback) callback();
+
+            chibiImg.style.transform = chibiDirection === -1 ? 'scaleX(-1)' : 'none';
+            dialog.textContent = `Vứt đi nè! 🚀`;
+            await moveChibiTo(chibiDirection === 1 ? window.innerWidth - 100 : 30, chibiPosY - 30);
+            if (isSpamBlocked) return;
+
+            heldBox.classList.add('hidden'); heldBox.innerHTML = '';
+            chibiImg.style.transform = chibiDirection === -1 ? 'scaleX(-1) scale(1.15) rotate(15deg)' : 'scale(1.15) rotate(-15deg)';
+            await new Promise(r => setTimeout(r, animationSpeed * 0.4));
+            if (isSpamBlocked) return;
+
+            dialog.textContent = `Xong xuôi! ✨`; isChibiWalking = true; isChibiRestingState = false; chibiImg.className = 'w-24 h-24 object-contain drop-shadow-xl pointer-events-none chibi-walking';
+        }
+
+        async function chibiEatAllData(targetContainerId, callback) {
+            if (isSpamBlocked) return;
+            const chibiImg = document.getElementById('chibi-img'), dialog = document.getElementById('chibi-dialog');
+            isAnimating = true; isChibiWalking = false; chibiImg.className = 'w-24 h-24 object-contain drop-shadow-xl pointer-events-none';
+            dialog.textContent = "Đang đói quá nè! 😋";
+
+            const cardRect = document.getElementById('simulation-display-card').getBoundingClientRect();
+            await moveChibiTo(cardRect.left + (cardRect.width / 2) - 48, cardRect.top + (cardRect.height / 2) - 48);
+            if (isSpamBlocked) { isAnimating = false; return; }
+
+            setChibiState('eating'); chibiImg.classList.add('chibi-eating'); dialog.textContent = "nhoàm nhoàm 😋✨";
+            await new Promise(r => setTimeout(r, 1800));
+            if (isSpamBlocked) { isAnimating = false; return; }
+
+            if (callback) callback();
+            chibiImg.classList.remove('chibi-eating'); dialog.textContent = "Ngon quá xá! 🌸";
+            await new Promise(r => setTimeout(r, 600));
+
+            if (!isSpamBlocked) { setChibiState('idle'); isChibiWalking = true; isChibiRestingState = false; chibiImg.className = 'w-24 h-24 object-contain drop-shadow-xl pointer-events-none chibi-walking'; dialog.textContent = "Đi dạo tiếp thôi~ ✨"; }
+            isAnimating = false;
+        }
+
+        function moveChibiTo(destX, destY) {
+            return new Promise(resolve => {
+                const chibi = document.getElementById('chibi-character'), chibiImg = document.getElementById('chibi-img'), startX = chibiPosX, startY = chibiPosY;
+                if (destX < startX) { chibiImg.classList.add('chibi-flipped'); chibiDirection = -1; }
+                else { chibiImg.classList.remove('chibi-flipped'); chibiDirection = 1; }
+
+                let startTime = null, duration = isSpamBlocked ? 400 : animationSpeed * 0.9;
+                function step(timestamp) {
+                    if (!startTime) startTime = timestamp;
+                    const progress = Math.min((timestamp - startTime) / duration, 1);
+                    chibiPosX = startX + (destX - startX) * progress;
+                    chibiPosY = startY + (destY - startY) * progress;
+                    chibi.style.left = chibiPosX + 'px'; chibi.style.top = chibiPosY + 'px';
+                    if (progress < 1) currentMoveFrame = requestAnimationFrame(step);
+                    else { currentMoveFrame = null; resolve(); }
+                }
+                currentMoveFrame = requestAnimationFrame(step);
+            });
+        }
+
+        function switchMode(mode) {
+            if (isAnimating || isSpamBlocked) return;
+            if (isGamePlaying && mode !== 'game') quitGameToMenu();
+            currentMode = mode;
+            if (gameInterval && mode !== 'game') clearInterval(gameInterval);
+
+            ['stack', 'queue', 'realqueue', 'bracket', 'game'].forEach(m => {
+                const btn = document.getElementById(`btn-tab-${m}`);
+                if (btn) {
+                    btn.className = (m === mode) ? 
+                        ((m === 'game') ? "flex items-center space-x-2 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-extrabold transition bg-amber-500 text-white shadow-md animate-pulse" : "flex items-center space-x-2 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-extrabold transition bg-pink-600 text-white shadow-md") :
+                        ((m === 'game') ? "flex items-center space-x-2 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-extrabold transition text-amber-950 dark:text-amber-300 bg-amber-200 dark:bg-amber-900/60 border-2 border-amber-400 dark:border-amber-600 shadow-md" : "flex items-center space-x-2 px-3 py-1.5 rounded-xl text-xs sm:text-sm font-extrabold transition text-slate-800 dark:text-slate-300 hover:text-pink-700");
+                }
+            });
+
+            document.getElementById('controls-stack').classList.toggle('hidden', mode !== 'stack');
+            document.getElementById('controls-queue').classList.toggle('hidden', mode !== 'queue');
+            document.getElementById('controls-realqueue').classList.toggle('hidden', mode !== 'realqueue');
+            document.getElementById('controls-bracket').classList.toggle('hidden', mode !== 'bracket');
+            document.getElementById('controls-game').classList.toggle('hidden', mode !== 'game');
+            document.getElementById('speed-control-box').classList.toggle('hidden', mode === 'game');
+            document.getElementById('stack-extra-btns').classList.toggle('hidden', mode !== 'stack');
+            document.getElementById('queue-extra-btns').classList.toggle('hidden', mode !== 'queue');
+
+            document.getElementById('visual-stack-container').classList.toggle('hidden', mode !== 'stack');
+            document.getElementById('visual-queue-container').classList.toggle('hidden', mode !== 'queue');
+            document.getElementById('visual-realqueue-container').classList.toggle('hidden', mode !== 'realqueue');
+            document.getElementById('visual-bracket-container').classList.toggle('hidden', mode !== 'bracket');
+            document.getElementById('visual-game-container').classList.toggle('hidden', mode !== 'game');
+
+            const modeBadge = document.getElementById('display-mode-badge'), ruleBadge = document.getElementById('display-rule-badge'), elementCounter = document.getElementById('element-counter');
+            if (mode === 'stack') {
+                modeBadge.textContent = "NGĂN XẾP (STACK)"; ruleBadge.innerHTML = '<i class="fa-solid fa-circle-info text-sky-600"></i> LIFO: Vào Sau - Ra Trước'; elementCounter.style.display = 'block';
+                updateCodeSnippet("S = Stack()\npush(S, 2)\npush(S, 5)\npush(S, 10)", "Khởi tạo danh sách ban đầu.");
+            } else if (mode === 'queue') {
+                modeBadge.textContent = "HÀNG ĐỢI (QUEUE)"; ruleBadge.innerHTML = '<i class="fa-solid fa-circle-info text-emerald-600"></i> FIFO: Vào Trước - Ra Trước'; elementCounter.style.display = 'block';
+                updateCodeSnippet("Q = Queue()\nenqueue(Q, 'A')\nenqueue(Q, 'B')", "Thêm phần tử vào cuối hàng đợi.");
+            } else if (mode === 'realqueue') {
+                modeBadge.textContent = "VÍ DỤ THỰC TẾ: QUẦY GIAO DỊCH"; ruleBadge.innerHTML = '<i class="fa-solid fa-circle-info text-emerald-600"></i> FIFO: Khách đến trước phục vụ trước'; elementCounter.style.display = 'none';
+                updateCodeSnippet("import random\nnames = ['An', 'Bình', 'Chi', 'Dũng']\nqueue.append(random.choice(names))\ncurrent = queue.pop(0)", "Mô hình phòng chờ FIFO chuẩn thực tế.");
+            } else if (mode === 'bracket') {
+                modeBadge.textContent = "BÀI TOÁN KIỂM TRA NGOẶC"; ruleBadge.innerHTML = '<i class="fa-solid fa-circle-info text-amber-600"></i> Ứng dụng thực tế của Stack'; elementCounter.style.display = 'none';
+                updateCodeSnippet("def kiem_tra_ngoac(expr):\n    S = []\n    for char in expr:\n        if char in '([{': S.append(char)\n        elif char in ')]}': S.pop()", "Kiểm tra ngoặc bằng Stack.");
+            } else if (mode === 'game') {
+                modeBadge.textContent = "MINI-GAME: TIỆM HAMBURGER & NƯỚC CHIBI"; ruleBadge.innerHTML = '<i class="fa-solid fa-circle-info text-amber-600"></i> Thời gian: 10 phút tổng | Thua nếu mất 5 khách liên tiếp hoặc tổng 15 khách'; elementCounter.style.display = 'none';
+                updateCodeSnippet("# Tiệm Hamburger & Đồ uống\n# Stack: Xếp nguyên liệu & Phục vụ", "Ứng dụng Stack vào game.");
+            }
+            renderCurrentState();
+        }
+
+        function renderCurrentState() {
+            if (currentMode === 'stack') renderStack();
+            else if (currentMode === 'queue') renderQueue();
+            else if (currentMode === 'realqueue') renderRealQueue();
+            else if (currentMode === 'bracket') renderBracketInit();
+            else if (currentMode === 'game') renderGame();
+        }
+
+        function renderStack() {
+            const listEl = document.getElementById('stack-items-list');
+            document.getElementById('len-val').textContent = stackData.length;
+            listEl.innerHTML = '';
+            if (stackData.length === 0) { listEl.innerHTML = `<div id="stack-empty-msg" class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 py-8 italic font-extrabold">[ Ngăn xếp rỗng ]</div>`; return; }
+            stackData.forEach((val, idx) => {
+                const isTop = (idx === stackData.length - 1);
+                const itemDiv = document.createElement('div');
+                itemDiv.className = `w-full py-2.5 px-4 rounded-2xl border-3 flex items-center justify-between font-mono text-sm font-extrabold shadow-md ${colors[idx % colors.length]} ${isTop ? 'glow-active ring-4 ring-sky-500' : ''}`;
+                itemDiv.innerHTML = `<span class="text-base">${val}</span><span class="text-xs uppercase font-extrabold px-2.5 py-0.5 rounded-full ${isTop ? 'bg-sky-600 text-white shadow' : 'bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200'}">${isTop ? 'Top' : ''}</span>`;
+                listEl.appendChild(itemDiv);
+            });
+        }
+
+        function renderQueue() {
+            const listEl = document.getElementById('queue-items-list');
+            document.getElementById('len-val').textContent = queueData.length;
+            listEl.innerHTML = '';
+            if (queueData.length === 0) { listEl.innerHTML = `<div class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 italic py-4 font-extrabold">[ Hàng đợi rỗng ]</div>`; return; }
+            queueData.forEach((val, idx) => {
+                const isFront = (idx === 0), isRear = (idx === queueData.length - 1);
+                const itemDiv = document.createElement('div');
+                itemDiv.className = `min-w-[85px] h-16 rounded-2xl border-3 bg-emerald-100 dark:bg-slate-800 border-emerald-500 text-emerald-950 dark:text-emerald-200 flex flex-col items-center justify-center font-mono font-extrabold shadow-md ${isFront ? 'ring-4 ring-rose-600 border-rose-600 bg-rose-100 dark:bg-slate-800 text-rose-950 dark:text-rose-200' : (isRear ? 'ring-4 ring-emerald-600' : '')}`;
+                itemDiv.innerHTML = `<span class="text-lg">${val}</span><span class="text-xs font-extrabold">${isFront ? 'FRONT' : (isRear ? 'REAR' : '')}</span>`;
+                listEl.appendChild(itemDiv);
+            });
+        }
+
+        function renderRealQueue() {
+            const listEl = document.getElementById('realqueue-list'), countEl = document.getElementById('realqueue-count'), chibiDialog = document.getElementById('counter-chibi-dialog');
+            countEl.textContent = `${realQueueData.length} người chờ`; listEl.innerHTML = '';
+            if (realQueueData.length === 0) {
+                if (chibiDialog) chibiDialog.textContent = "Quầy rảnh rỗi quá~ 🌸";
+                listEl.innerHTML = `<div class="text-xs sm:text-sm text-emerald-700 dark:text-emerald-300 text-center py-6 italic w-full font-extrabold">[ Phòng chờ đang trống ]</div>`;
+                return;
+            } else if (chibiDialog && chibiDialog.textContent.includes("Sẵn sàng")) {
+                chibiDialog.textContent = `Xin kính chào quý khách! ✨`;
+            }
+            realQueueData.forEach((item, idx) => {
+                const isFront = (idx === 0), itemDiv = document.createElement('div');
+                itemDiv.id = `queue-customer-${item.ticket}`;
+                itemDiv.className = `min-w-[130px] p-2.5 rounded-2xl border-3 flex items-center justify-between font-sans text-xs font-extrabold shadow-md transition-all duration-300 ${isFront ? 'bg-rose-100 dark:bg-slate-800 border-rose-600 text-rose-950 dark:text-rose-200 ring-4 ring-rose-500' : 'bg-white dark:bg-slate-800 border-emerald-400 dark:border-slate-600 text-emerald-950 dark:text-emerald-200'}`;
+                itemDiv.innerHTML = `<div class="flex items-center gap-1.5"><i class="fa-solid fa-user ${isFront ? 'text-rose-600' : 'text-emerald-600'}"></i><span>${item.name}</span></div>${isFront ? '<span class="px-2 py-0.5 bg-rose-600 text-white font-extrabold rounded text-[10px] shadow">FRONT</span>' : `<span class="text-[10px] text-slate-600 dark:text-slate-400 font-mono">#${idx + 1}</span>`}`;
+                listEl.appendChild(itemDiv);
+            });
+        }
+
+        function renderBracketInit() {
+            const expr = document.getElementById('bracket-input').value, displayEl = document.getElementById('bracket-expr-display');
+            displayEl.innerHTML = '';
+            for (let char of expr) {
+                const span = document.createElement('span');
+                span.className = "px-3 py-1 rounded-xl bg-emerald-100 dark:bg-slate-800 border-2 border-emerald-500 text-emerald-950 dark:text-emerald-200 font-mono font-extrabold shadow-sm";
+                span.textContent = char; displayEl.appendChild(span);
+            }
+            document.getElementById('bracket-status-badge').textContent = "● SẴN SÀNG";
+            document.getElementById('bracket-stack-items').innerHTML = `<div class="text-xs text-sky-500 italic py-8 font-extrabold">[ S Rống ]</div>`;
+        }
+
+        function startGame() {
+            isGamePlaying = true; 
+            document.getElementById('start-game-btn-container').classList.add('hidden');
+            document.getElementById('game-active-status-bar').classList.remove('hidden');
+
+            const fixedChibi = document.getElementById('fixed-chibi-container');
+            if (fixedChibi) fixedChibi.style.display = 'none';
+
+            gameTimer = 600; 
+            gameScore = 0; 
+            gameStack = [];
+            consecutiveLostCount = 0;
+            totalLostCount = 0;
+
+            thrownButtonsList = [];
+            thrownCountBeforeTimer = 0;
+            if (returnTimeoutId) { clearTimeout(returnTimeoutId); returnTimeoutId = null; }
+
+            const difficulty = document.getElementById('game-difficulty-select').value;
+            let count = 50, patienceTime = 15, diffName = "Wonderhoy!! (50 khách)";
+            if (difficulty === 'easy') { count = 10; patienceTime = 40; diffName = "Dễ (10 khách)"; }
+            else if (difficulty === 'medium') { count = 20; patienceTime = 30; diffName = "Trung bình (20 khách)"; }
+            else if (difficulty === 'hard') { count = 35; patienceTime = 20; diffName = "Khó (35 khách)"; }
+
+            document.getElementById('active-game-info').innerHTML = `🔥 Chế độ: <b>${diffName}</b> | Kiên nhẫn: <b>${patienceTime}s/khách</b>`;
+            gameCustomers = [];
+            for (let i = 0; i < count; i++) {
+                gameCustomers.push({ 
+                    name: randomNamesList[Math.floor(Math.random() * randomNamesList.length)], 
+                    dish: possibleDishes[Math.floor(Math.random() * possibleDishes.length)], 
+                    timeLeft: patienceTime, 
+                    maxTime: patienceTime 
+                });
+            }
+            
+            document.getElementById('game-score-display').textContent = `Điểm: ${gameScore} 🌟`;
+            updatePatienceUI();
+
+            const cloth = document.getElementById('cleaning-cloth');
+            if (difficulty === 'wonderhoy') {
+                cloth.style.display = 'flex';
+                scheduleNextWonderhoyEvent(20000); 
+            } else {
+                cloth.style.display = 'none';
+            }
+
+            if (gameInterval) clearInterval(gameInterval);
+            
+            gameInterval = setInterval(() => {
+                gameTimer--;
+                let mins = Math.floor(gameTimer / 60), secs = gameTimer % 60;
+                document.getElementById('game-timer').textContent = `⏳ ${mins}:${secs < 10 ? '0' : ''}${secs}`;
+                
+                if (gameCustomers.length > 0) {
+                    gameCustomers[0].timeLeft--;
+                    
+                    if (gameCustomers[0].timeLeft <= 0) {
+                        consecutiveLostCount++;
+                        totalLostCount++;
+                        
+                        showAlert(`Khách ${gameCustomers[0].name} kiên nhẫn hết và bỏ đi! 😡 (-5đ)`, 'error');
+                        gameCustomers.shift(); 
+                        gameScore = Math.max(0, gameScore - 5);
+                        document.getElementById('game-score-display').textContent = `Điểm: ${gameScore} 🌟`;
+                        updatePatienceUI();
+
+                        if (consecutiveLostCount >= 5) {
+                            endGameByDefeat(`💥 GAME OVER! Đã có 5 khách LIÊN TIẾP bỏ đi vì mất kiên nhẫn!`);
+                            return;
+                        }
+                        if (totalLostCount >= 15) {
+                            endGameByDefeat(`💥 GAME OVER! Tổng số khách mất kiên nhẫn đã chạm mốc 15 người!`);
+                            return;
+                        }
+                    }
+                }
+
+                if (gameTimer <= 0 || gameCustomers.length === 0) {
+                    clearInterval(gameInterval);
+                    if (wonderhoyRandomEventInterval) clearTimeout(wonderhoyRandomEventInterval);
+                    clearEggSplatter();
+                    cloth.style.display = 'none';
+                    restoreAllThrownButtonsImmediate();
+                    resetButtonsShuffle();
+                    
+                    showAlert(gameCustomers.length === 0 ? `🎉 TUYỆT VỜI! Đã phục vụ xong toàn bộ khách! Tổng điểm: ${gameScore} 🌟` : `⏰ HẾT GIỜ 10 PHÚT! Tổng điểm: ${gameScore} 🌟`, 'success');
+                    quitGameToMenu();
+                }
+                renderGame();
+            }, 1000);
+
+            renderGame();
+            showAlert(`Bắt đầu vòng 10 phút (${diffName})! Phục vụ ${count} vị khách.`, 'info');
+        }
+
+        function updatePatienceUI() {
+            const el = document.getElementById('game-patience-display');
+            if (el) el.textContent = `Mất kiên nhẫn: ${totalLostCount}/15 (${consecutiveLostCount}/5 liên tiếp) 😡`;
+        }
+
+        function endGameByDefeat(reasonMessage) {
+            if (gameInterval) clearInterval(gameInterval);
+            if (wonderhoyRandomEventInterval) clearTimeout(wonderhoyRandomEventInterval);
+            clearEggSplatter();
+            document.getElementById('cleaning-cloth').style.display = 'none';
+            restoreAllThrownButtonsImmediate();
+            resetButtonsShuffle();
+            
+            showAlert(`${reasonMessage} Tổng điểm đạt được: ${gameScore} 🌟`, 'error');
+            quitGameToMenu();
+        }
+
+        function scheduleNextWonderhoyEvent(intervalTime) {
+            if (wonderhoyRandomEventInterval) clearTimeout(wonderhoyRandomEventInterval);
+            let currentCount = gameCustomers.length;
+            if (currentCount <= 10) intervalTime = 5000; 
+            else if (currentCount < 25) intervalTime = 10000; 
+            else intervalTime = 20000; 
+
+            wonderhoyRandomEventInterval = setTimeout(() => {
+                if (isGamePlaying) {
+                    triggerWonderhoyEventLogic();
+                    scheduleNextWonderhoyEvent(intervalTime);
+                }
+            }, intervalTime);
+        }
+
+        function triggerWonderhoyEventLogic() {
+            if (!isGamePlaying) return;
+            let currentCount = gameCustomers.length;
+
+            if (currentCount <= 10) {
+                showAlert("⚡ CẢNH BÁO TỐI THƯỢNG (X3)! Cả 3 sự kiện đồng loạt tấn công!", "error");
+                triggerWonderhoyEggPrank();
+                triggerShuffleButtonsPrank();
+                triggerThrowButtonOutPrank();
+            } else if (currentCount < 25) {
+                showAlert("🔥 CẢNH BÁO KÉP (X2)! 2 sự kiện xuất hiện cùng lúc!", "error");
+                let randPair = Math.random();
+                if (randPair < 0.33) { triggerWonderhoyEggPrank(); triggerShuffleButtonsPrank(); }
+                else if (randPair < 0.66) { triggerShuffleButtonsPrank(); triggerThrowButtonOutPrank(); }
+                else { triggerWonderhoyEggPrank(); triggerThrowButtonOutPrank(); }
+            } else {
+                let choice = Math.random();
+                if (choice < 0.33) triggerWonderhoyEggPrank();
+                else if (choice < 0.66) triggerShuffleButtonsPrank();
+                else triggerThrowButtonOutPrank();
+            }
+        }
+
+        function quitGameToMenu() {
+            if (gameInterval) clearInterval(gameInterval);
+            if (wonderhoyRandomEventInterval) clearTimeout(wonderhoyRandomEventInterval);
+            clearEggSplatter();
+            document.getElementById('cleaning-cloth').style.display = 'none';
+            restoreAllThrownButtonsImmediate();
+            resetButtonsShuffle();
+            isGamePlaying = false; 
+            document.getElementById('game-active-status-bar').classList.add('hidden');
+            document.getElementById('start-game-btn-container').classList.remove('hidden');
+
+            const fixedChibi = document.getElementById('fixed-chibi-container');
+            if (fixedChibi) fixedChibi.style.display = 'block';
+
+            gameStack = []; gameCustomers = []; renderGame();
+        }
+
+        async function triggerWonderhoyEggPrank() {
+            if (!isGamePlaying) return;
+            const overlay = document.getElementById('egg-splatter-overlay');
+            overlay.style.display = 'block';
+
+            const chibi = document.getElementById('chibi-character');
+            const dialog = document.getElementById('chibi-dialog');
+            
+            isChibiWalking = false;
+            let originalLeft = chibi.style.left;
+            let originalTop = chibi.style.top;
+            
+            chibi.style.left = (window.innerWidth / 2 - 50) + 'px';
+            chibi.style.top = (window.innerHeight / 2 - 50) + 'px';
+            dialog.textContent = "Muhehehe, Wonderhoy! Hơi thở của trứng thức thứ 36!";
+
+            let targets = [
+                {x: window.innerWidth * 0.25, y: window.innerHeight * 0.45},
+                {x: window.innerWidth * 0.5, y: window.innerHeight * 0.5},
+                {x: window.innerWidth * 0.75, y: window.innerHeight * 0.6}
+            ];
+
+            for (let target of targets) {
+                const egg = document.createElement('div');
+                egg.className = 'flying-egg-projectile';
+                egg.innerHTML = '🥚';
+                egg.style.left = (window.innerWidth / 2) + 'px';
+                egg.style.top = (window.innerHeight / 2) + 'px';
+                document.body.appendChild(egg);
+
+                setTimeout(() => {
+                    egg.style.left = target.x + 'px';
+                    egg.style.top = target.y + 'px';
+                    egg.style.transform = 'scale(1.8) rotate(720deg)';
+                }, 50);
+
+                setTimeout(() => {
+                    egg.remove();
+                    createMassiveSplatterSplash(target.x, target.y);
+                }, 500);
+                await new Promise(r => setTimeout(r, 200));
+            }
+
+            showAlert("💥 Bé Chibi ném trứng vỡ khắp màn hình! Lướt khăn lau ít nhất 3 lần vào mỗi vết để làm sạch!", "error");
+
+            setTimeout(() => {
+                isChibiWalking = true;
+                chibi.style.left = originalLeft;
+                chibi.style.top = originalTop;
+                dialog.textContent = "WONDERHOI!! ✨";
+            }, 3000);
+        }
+
+        function createMassiveSplatterSplash(x, y) {
+            const overlay = document.getElementById('egg-splatter-overlay');
+            for (let i = 0; i < 3; i++) {
+                const splatter = document.createElement('div');
+                splatter.className = 'egg-splatter-splash splatter-mark';
+                splatter.dataset.wipeCount = '0'; 
+                
+                let offsetX = (Math.random() - 0.5) * 160;
+                let offsetY = (Math.random() - 0.5) * 160;
+                let size = 260 + Math.random() * 120;
+                
+                splatter.style.left = (x + offsetX - size/2) + 'px';
+                splatter.style.top = (y + offsetY - size/2) + 'px';
+                splatter.style.width = size + 'px';
+                splatter.style.height = size + 'px';
+                
+                splatter.innerHTML = `
+                    <svg viewBox="0 0 200 200" width="100%" height="100%">
+                        <path d="M30,100 Q10,40 90,20 Q170,0 180,70 Q200,140 140,180 Q80,220 40,160 Q0,100 30,100 Z" fill="rgba(255, 255, 255, 0.98)" stroke="#94a3b8" stroke-width="4"/>
+                        <circle cx="100" cy="100" r="${55 + Math.random()*25}" fill="#d97706" opacity="0.98"/>
+                    </svg>
+                `;
+                overlay.appendChild(splatter);
+            }
+        }
+
+        async function triggerThrowButtonOutPrank() {
+            if (!isGamePlaying) return;
+
+            let allButtons = [];
+            for (let i = 0; i < 7; i++) {
+                let btn = document.getElementById(`btn-ing-${i}`);
+                if (btn && !thrownButtonsList.includes(btn)) allButtons.push(btn);
+            }
+            let serveBtn = document.getElementById('btn-serve-customer');
+            if (serveBtn && !thrownButtonsList.includes(serveBtn)) allButtons.push(serveBtn);
+            if (allButtons.length === 0) return;
+
+            let targetBtn = allButtons[Math.floor(Math.random() * allButtons.length)];
+            const chibi = document.getElementById('chibi-character'), chibiImg = document.getElementById('chibi-img'), dialog = document.getElementById('chibi-dialog'), heldBox = document.getElementById('chibi-held-box');
+
+            isChibiWalking = false;
+            chibiImg.className = 'w-24 h-24 object-contain drop-shadow-xl pointer-events-none';
+            dialog.textContent = `Hí hí, lấy nút "${targetBtn.textContent.trim()}" quăng ra ngoài nhé! 🐾`;
+
+            let btnRect = targetBtn.getBoundingClientRect();
+            await moveChibiTo(btnRect.left - 20, btnRect.top - 20);
+            if (!isGamePlaying) return;
+
+            targetBtn.style.visibility = 'hidden';
+            heldBox.innerHTML = `<div class="px-3 py-1.5 bg-pink-700 text-white font-mono font-extrabold text-xs rounded-xl shadow-xl border-2 border-white chibi-item-held">${targetBtn.textContent.trim()}</div>`;
+            heldBox.classList.remove('hidden');
+            await new Promise(r => setTimeout(r, 600));
+
+            let posX, posY, overlapping, attempts = 0;
+            let btnW = targetBtn.offsetWidth || 120, btnH = targetBtn.offsetHeight || 50;
+            let maxW = window.innerWidth - 140, maxH = window.innerHeight - 100;
+            let currentPlacedRects = thrownButtonsList.map(b => { let r = b.getBoundingClientRect(); return {x: r.left, y: r.top, w: r.width || btnW, h: r.height || btnH}; });
+
+            do {
+                overlapping = false;
+                posX = Math.floor(Math.random() * (maxW - 120)) + 20;
+                posY = Math.floor(Math.random() * (maxH - 320)) + 300;
+                for (let rect of currentPlacedRects) {
+                    if (!(posX + btnW < rect.x || posX > rect.x + rect.w || posY + btnH < rect.y || posY > rect.y + rect.h)) { overlapping = true; break; }
+                }
+                attempts++;
+            } while (overlapping && attempts < 40);
+
+            await moveChibiTo(posX - 20, posY - 20);
+            if (!isGamePlaying) return;
+
+            heldBox.classList.add('hidden'); heldBox.innerHTML = '';
+            targetBtn.style.visibility = 'visible';
+            targetBtn.style.position = 'fixed';
+            targetBtn.style.zIndex = '145';
+            targetBtn.style.left = posX + 'px';
+            targetBtn.style.top = posY + 'px';
+
+            thrownButtonsList.push(targetBtn);
+            thrownCountBeforeTimer++;
+            showAlert(`🚫 Nút "${targetBtn.textContent.trim()}" đã bị quăng ra ngoài! (Đã quăng: ${thrownCountBeforeTimer}/6)`, 'warning');
+
+            if (thrownCountBeforeTimer >= 6 && !returnTimeoutId) {
+                showAlert(`⚠️ Đã có 6 nút bị quăng! Tất cả tự động trở về sau 10 giây!`, 'error');
+                returnTimeoutId = setTimeout(() => {
+                    restoreAllThrownButtonsImmediate();
+                    showAlert(`✨ Đã hết giờ! Các nút đã trở về vị trí cũ.`, 'success');
+                }, 10000);
+            }
+
+            setTimeout(() => {
+                isChibiWalking = true;
+                chibiImg.className = 'w-24 h-24 object-contain drop-shadow-xl pointer-events-none chibi-walking';
+                dialog.textContent = "WONDERHOI!! ✨";
+            }, 1000);
+        }
+
+        function restoreAllThrownButtonsImmediate() {
+            if (returnTimeoutId) { clearTimeout(returnTimeoutId); returnTimeoutId = null; }
+            thrownCountBeforeTimer = 0;
+            thrownButtonsList = [];
+
+            const box = document.getElementById('ingredient-buttons-box');
+            const serveBtnContainer = document.getElementById('serve-button-container');
+            const serveBtn = document.getElementById('btn-serve-customer');
+
+            for (let i = 0; i < 7; i++) {
+                let btn = document.getElementById(`btn-ing-${i}`);
+                if (btn) { btn.style.visibility = 'visible'; btn.style.position = 'static'; box.appendChild(btn); }
+            }
+            if (serveBtn) { serveBtn.style.visibility = 'visible'; serveBtn.style.position = 'static'; serveBtnContainer.appendChild(serveBtn); }
+        }
+
+        function triggerShuffleButtonsPrank() {
+            if (!isGamePlaying) return;
+            const chibi = document.getElementById('chibi-character'), dialog = document.getElementById('chibi-dialog');
+            isChibiWalking = false;
+            let originalLeft = chibi.style.left, originalTop = chibi.style.top;
+
+            chibi.style.left = (window.innerWidth / 2 - 50) + 'px';
+            chibi.style.top = (window.innerHeight / 2 - 50) + 'px';
+            dialog.textContent = "Muhehehe, hoán đổi vị trí các nút nguyên liệu nhé! 🔀";
+
+            const box = document.getElementById('ingredient-buttons-box');
+            let activeIngBtns = [];
+            for (let i = 0; i < 7; i++) {
+                let btn = document.getElementById(`btn-ing-${i}`);
+                if (btn && !thrownButtonsList.includes(btn)) activeIngBtns.push(btn);
+            }
+            activeIngBtns.sort(() => Math.random() - 0.5);
+            activeIngBtns.forEach(btn => box.appendChild(btn));
+
+            box.classList.add('animate-bounce');
+            setTimeout(() => box.classList.remove('animate-bounce'), 1000);
+            showAlert("🔀 Bé Chibi đã hoán đổi vị trí các nút bấm!", "error");
+
+            setTimeout(() => {
+                isChibiWalking = true;
+                chibi.style.left = originalLeft; chibi.style.top = originalTop;
+                dialog.textContent = "WONDERHOI!! ✨";
+            }, 2500);
+        }
+
+        function resetButtonsShuffle() {
+            const box = document.getElementById('ingredient-buttons-box');
+            const panelGrid = document.getElementById('game-control-panel-grid');
+            const serveBtnContainer = document.getElementById('serve-button-container');
+            if (!box || !panelGrid || !serveBtnContainer) return;
+
+            for (let i = 0; i < 7; i++) {
+                let btn = document.getElementById(`btn-ing-${i}`);
+                if (btn && !thrownButtonsList.includes(btn)) box.appendChild(btn);
+            }
+            panelGrid.innerHTML = '';
+            panelGrid.appendChild(box);
+            panelGrid.appendChild(serveBtnContainer);
+        }
+
+        function initCleaningClothDrag() {
+            const cloth = document.getElementById('cleaning-cloth');
+            let isDraggingCloth = false, startX, startY, initialClothX, initialClothY;
+
+            cloth.addEventListener('pointerdown', (e) => {
+                isDraggingCloth = true;
+                startX = e.clientX; startY = e.clientY;
+                const rect = cloth.getBoundingClientRect();
+                initialClothX = rect.left; initialClothY = rect.top;
+                cloth.setPointerCapture(e.pointerId);
+            });
+
+            cloth.addEventListener('pointermove', (e) => {
+                if (!isDraggingCloth) return;
+                let currentX = initialClothX + (e.clientX - startX);
+                let currentY = initialClothY + (e.clientY - startY);
+                cloth.style.left = currentX + 'px';
+                cloth.style.top = currentY + 'px';
+                cloth.style.bottom = 'auto';
+
+                const splatters = document.querySelectorAll('.splatter-mark');
+                splatters.forEach(splatter => {
+                    const sRect = splatter.getBoundingClientRect();
+                    const cRect = cloth.getBoundingClientRect();
+                    if (!(cRect.right < sRect.left || cRect.left > sRect.right || cRect.bottom < sRect.top || cRect.top > sRect.bottom)) {
+                        if (!splatter.dataset.lastWiped || Date.now() - parseInt(splatter.dataset.lastWiped) > 250) {
+                            splatter.dataset.lastWiped = Date.now().toString();
+                            let count = parseInt(splatter.dataset.wipeCount || '0') + 1;
+                            splatter.dataset.wipeCount = count.toString();
+
+                            if (count === 1) { splatter.style.opacity = '0.65'; splatter.style.transform = 'scale(0.95)'; }
+                            else if (count === 2) { splatter.style.opacity = '0.35'; splatter.style.transform = 'scale(0.85)'; }
+                            else if (count >= 3) { splatter.style.opacity = '0'; splatter.style.transform = 'scale(0.5)'; setTimeout(() => splatter.remove(), 250); }
+
+                            const overlay = document.getElementById('egg-splatter-overlay');
+                            if (overlay.children.length <= 1) overlay.style.display = 'none';
+                        }
+                    }
+                });
+            });
+
+            cloth.addEventListener('pointerup', (e) => {
+                if (!isDraggingCloth) return;
+                isDraggingCloth = false;
+                cloth.style.left = '20px'; cloth.style.bottom = '20px'; cloth.style.top = 'auto';
+                cloth.releasePointerCapture(e.pointerId);
+            });
+        }
+
+        function clearEggSplatter() {
+            const overlay = document.getElementById('egg-splatter-overlay');
+            overlay.innerHTML = ''; overlay.style.display = 'none';
+        }
+
+        function renderGame() {
+            const queueEl = document.getElementById('game-customer-queue');
+            queueEl.innerHTML = gameCustomers.length === 0 ? `<span class="text-xs text-amber-800 dark:text-amber-300 font-extrabold italic py-2">Hết khách đang chờ! Bấm 'Bắt đầu vòng mới' để chơi tiếp.</span>` : '';
+            gameCustomers.forEach((item, idx) => {
+                const isFront = (idx === 0), pct = Math.max(0, (item.timeLeft / item.maxTime) * 100);
+                const div = document.createElement('div');
+                div.className = `p-1.5 rounded-xl border-2 flex flex-col items-center text-xs font-extrabold min-w-[110px] shrink-0 shadow-sm ${isFront ? 'bg-amber-100 dark:bg-slate-800 border-amber-600 ring-2 ring-amber-500 text-amber-950 dark:text-amber-200' : 'bg-white dark:bg-slate-900 border-amber-300 dark:border-slate-700 text-slate-800 dark:text-slate-200'}`;
+                div.innerHTML = `<span class="truncate max-w-[100px] text-xs">👤 ${item.name}</span><span class="text-amber-950 dark:text-amber-300 text-[11px] font-extrabold text-center">${item.dish}</span><div class="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full mt-1 overflow-hidden"><div class="${item.timeLeft > (item.maxTime * 0.3) ? 'bg-emerald-500' : 'bg-rose-500'} h-full transition-all duration-1000" style="width: ${pct}%"></div></div><span class="text-[10px] text-slate-600 dark:text-slate-400 font-extrabold mt-0.5">${isFront ? `⏳ ${item.timeLeft}s (FRONT)` : 'Chờ'}</span>`;
+                queueEl.appendChild(div);
+            });
+
+            const stackEl = document.getElementById('game-stack-tube');
+            stackEl.innerHTML = gameStack.length === 0 ? `<div class="text-xs text-amber-600 dark:text-amber-400 py-6 font-extrabold">[ Đĩa rỗng ]</div>` : '';
+            gameStack.forEach((val, idx) => {
+                const isTop = (idx === gameStack.length - 1), isMergedProduct = val.startsWith('Hamburger') || val === 'Pepsi Messi' || val === 'Cocanado' || val.includes('+');
+                const div = document.createElement('div');
+                div.className = `w-full py-1.5 rounded-lg font-extrabold text-center text-xs shadow-xs ${isMergedProduct ? 'bg-emerald-600 text-white ring-2 ring-emerald-400 text-sm animate-bounce' : 'bg-amber-200 dark:bg-slate-700 border border-amber-500 dark:border-slate-600 text-amber-950 dark:text-amber-200 ' + (isTop ? 'ring-2 ring-amber-600 bg-amber-300 dark:bg-slate-600' : '')}`;
+                div.textContent = val + (isTop && !isMergedProduct ? ' (Top)' : (isMergedProduct ? ' ✨ [Sẵn sàng phục vụ]' : ''));
+                stackEl.appendChild(div);
+            });
+        }
+
+        function checkAndAutoMergeBurger() {
+            let lastBreadIdx = -1;
+            for (let i = 0; i < gameStack.length; i++) {
+                if (gameStack[i] === 'Vỏ bánh') {
+                    if (lastBreadIdx === -1) lastBreadIdx = i;
+                    else {
+                        let subStack = gameStack.slice(lastBreadIdx, i + 1), crafted = craftBurgerFromSubStack(subStack);
+                        if (crafted) {
+                            gameStack.splice(lastBreadIdx, subStack.length, crafted);
+                            showAlert(`✨ Hợp nhất thành công: ${crafted}!`, 'success');
+                            return;
+                        } else lastBreadIdx = i;
+                    }
+                }
+            }
+
+            for (let i = 0; i < gameStack.length - 1; i++) {
+                let item1 = gameStack[i], item2 = gameStack[i+1];
+                let isItem1Burger = item1.startsWith('Hamburger'), isItem1Drink = (item1 === 'Pepsi Messi' || item1 === 'Cocanado');
+                let isItem2Burger = item2.startsWith('Hamburger'), isItem2Drink = (item2 === 'Pepsi Messi' || item2 === 'Cocanado');
+
+                if ((isItem1Burger && isItem2Drink) || (isItem1Drink && isItem2Burger)) {
+                    let burgerName = isItem1Burger ? item1 : item2;
+                    let drinkName = isItem1Drink ? item1 : item2;
+                    let comboName = `${burgerName} + ${drinkName}`;
+                    gameStack.splice(i, 2, comboName);
+                    showAlert(`🥤🍔 Đã kết hợp thành công combo: ${comboName}!`, 'success');
+                    return;
+                }
+            }
+        }
+
+        function gamePushIngredient(ingredientName) {
+            if (!isGamePlaying) { showAlert("Vui lòng bấm 'Bắt đầu vòng mới' để chơi game trước!", "error"); return; }
+            if (gameTimer <= 0 && gameCustomers.length > 0) return;
+            gameStack.push(ingredientName); checkAndAutoMergeBurger(); renderGame();
+        }
+
+        function gamePopIngredient() {
+            if (!isGamePlaying || gameStack.length === 0) { showAlert("Đĩa kẹp đang rỗng!", "error"); return; }
+            let popped = gameStack.pop(); renderGame(); showAlert(`Đã rút lớp '${popped}' khỏi đỉnh (Pop).`, 'warning');
+        }
+
+        function gameClearStack() {
+            if (!isGamePlaying || gameStack.length === 0) { showAlert("Đĩa đã rỗng sẵn!", "info"); return; }
+            gameStack = []; renderGame(); showAlert("Đã dọn sạch đĩa nguyên liệu!", "warning");
+        }
+
+        function craftBurgerFromSubStack(subStack) {
+            if (subStack.length < 2 || subStack[0] !== 'Vỏ bánh' || subStack[subStack.length - 1] !== 'Vỏ bánh') return null;
+            let middleItems = subStack.slice(1, subStack.length - 1);
+            if (middleItems.length === 0) return 'Hamburger ko';
+            let sortedMiddle = [...middleItems].sort().join(',');
+            if (sortedMiddle === ['Cà Chua', 'Phô Mai', 'Rau', 'Thịt'].sort().join(',')) return 'Hamburger thịt';
+            if (sortedMiddle === ['Cà Chua', 'Phô Mai', 'Rau'].sort().join(',')) return 'Hamburger ko thịt';
+            if (sortedMiddle === ['Phô Mai', 'Thịt'].sort().join(',')) return 'Hamburger ko đồ chua';
+            return null;
+        }
+
+        function gameServeCustomer() {
+            if (!isGamePlaying || gameCustomers.length === 0 || gameStack.length === 0) { showAlert("Không thể phục vụ lúc này!", "error"); return; }
+            let craftedDish = gameStack[gameStack.length - 1];
+            const frontCustomer = gameCustomers[0];
+
+            if (craftedDish === frontCustomer.dish) {
+                gameStack.pop(); gameCustomers.shift(); gameScore += 15;
+                consecutiveLostCount = 0; 
+                document.getElementById('game-score-display').textContent = `Điểm: ${gameScore} 🌟`;
+                updatePatienceUI();
+                showAlert(`🎉 Phục vụ thành công '${craftedDish}' cho khách ${frontCustomer.name}! (+15đ)`, 'success');
+            } else {
+                showAlert(`❌ Món ở đỉnh '${craftedDish}' không khớp yêu cầu khách ${frontCustomer.name} ('${frontCustomer.dish}')!`, 'error');
+            }
+            renderGame();
+        }
+
+        async function doPush() {
+            if (checkSpamAction() || isAnimating) return;
+            let val = document.getElementById('stack-input').value.trim() || (Math.floor(Math.random() * 90) + 10);
+            isAnimating = true;
+            await chibiFetchAndThrow('stack-input', 'stack-tube-box', val, 'stack', () => {
+                const emptyMsg = document.getElementById('stack-empty-msg');
+                if (emptyMsg) emptyMsg.remove();
+                stackData.push(val); renderStack();
+                updateCodeSnippet(`push(S, ${isNaN(val) ? `'${val}'` : val})\nS.append(${isNaN(val) ? `'${val}'` : val})`, "Đẩy giá trị vào đỉnh Stack.");
+                showAlert(`Push('${val}') thành công!`, 'success');
+            });
+            isAnimating = false;
+        }
+
+        async function doPop() {
+            if (checkSpamAction() || isAnimating) return;
+            if (stackData.length === 0) { showAlert("LỖI: Ngăn xếp rỗng!", "error"); return; }
+            isAnimating = true;
+            const poppedVal = stackData[stackData.length - 1];
+            await chibiPopAndThrow('stack-tube-box', poppedVal, 'stack', () => {
+                stackData.pop(); renderStack();
+                updateCodeSnippet(`item = pop(S)\nitem = S.pop()`, "Rút phần tử khỏi đỉnh Stack.");
+                showAlert(`Đã Pop('${poppedVal}') ra khỏi đỉnh.`, 'warning');
+            });
+            isAnimating = false;
+        }
+
+        function doTop() {
+            if (stackData.length === 0) { showAlert("Ngăn xếp rỗng!", "error"); return; }
+            showAlert(`Phần tử đỉnh Top S[-1] là: ${stackData[stackData.length - 1]}`, 'info');
+        }
+
+        function doIsEmptyStack() { showAlert(`isEmptyStack: ${stackData.length === 0}`, stackData.length === 0 ? 'warning' : 'info'); }
+
+        async function doEnqueue() {
+            if (checkSpamAction() || isAnimating) return;
+            let val = document.getElementById('queue-input').value.trim() || String.fromCharCode(65 + Math.floor(Math.random() * 26));
+            isAnimating = true;
+            await chibiFetchAndThrow('queue-input', 'queue-pipe-box', val, 'queue-rear', () => {
+                queueData.push(val); renderQueue();
+                updateCodeSnippet(`enqueue(Q, '${val}')\nQ.append('${val}')`, "Thêm phần tử vào cuối hàng đợi (REAR).");
+                showAlert(`Enqueue('${val}') thành công vào REAR!`, 'success');
+            });
+            isAnimating = false;
+        }
+
+        async function doDequeue() {
+            if (checkSpamAction() || isAnimating) return;
+            if (queueData.length === 0) { showAlert("Hàng đợi rỗng!", "error"); return; }
+            isAnimating = true;
+            const poppedVal = queueData[0];
+            await chibiPopAndThrow('queue-pipe-box', poppedVal, 'queue-front', () => {
+                queueData.shift(); renderQueue();
+                updateCodeSnippet(`val = dequeue(Q)\nval = Q.pop(0)`, "Lấy phần tử đầu hàng đợi từ FRONT.");
+                showAlert(`Đã Dequeue('${poppedVal}') từ FRONT ra ngoài!`, 'warning');
+            });
+            isAnimating = false;
+        }
+
+        function doRealEnqueue() {
+            if (isAnimating) return;
+            let randomName = randomNamesList[Math.floor(Math.random() * randomNamesList.length)];
+            let ticketStr = 'A' + String(ticketCounter++).padStart(3, '0');
+            realQueueData.push({ ticket: ticketStr, name: randomName });
+            renderRealQueue();
+            updateCodeSnippet(`import random\nnames = ['An', 'Bình', ...]\nqueue.append({'ticket': '${ticketStr}', 'name': '${randomName}'})`, "Bốc thăm ngẫu nhiên tên khách hàng vào Queue.");
+            showAlert(`Khách '${randomName}' vừa lấy số ${ticketStr} và vào hàng chờ!`, 'success');
+        }
+
+        async function doRealDequeue() {
+            if (isAnimating || realQueueData.length === 0) { showAlert("Phòng chờ đang trống!", "error"); return; }
+            isAnimating = true;
+            const servedCustomer = realQueueData[0];
+            document.getElementById('counter-chibi-dialog').textContent = `Kính mời khách hàng ${servedCustomer.name}! ✨`;
+            document.getElementById('current-serving-status').textContent = `Đang phục vụ: ${servedCustomer.name} (${servedCustomer.ticket})`;
+            
+            const customerEl = document.getElementById(`queue-customer-${servedCustomer.ticket}`);
+            if (customerEl) { customerEl.style.transform = "translateY(-20px) scale(0.8)"; customerEl.style.opacity = "0"; await new Promise(r => setTimeout(r, 650)); }
+            realQueueData.shift(); renderRealQueue();
+            updateCodeSnippet(`current_customer = queue.pop(0)`, "Mời người đứng đầu (FRONT) vào quầy giao dịch.");
+            showAlert(`Đã phục vụ xong khách hàng ${servedCustomer.name}!`, 'warning');
+            isAnimating = false;
+        }
+
+        function startBracketCheck() {
+            if (checkSpamAction() || isAnimating) return;
+            const expr = document.getElementById('bracket-input').value.trim();
+            if (!expr) { showAlert("Vui lòng nhập biểu thức cần kiểm tra!", "error"); return; }
+            isAnimating = true; renderBracketInit();
+
+            const badgeEl = document.getElementById('bracket-status-badge'), spans = document.getElementById('bracket-expr-display').children, stackItemsList = document.getElementById('bracket-stack-items');
+            let stack = [], i = 0;
+
+            function renderBracketStack() {
+                stackItemsList.innerHTML = stack.length === 0 ? `<div class="text-xs text-sky-500 italic py-8 font-extrabold">[ S Rống ]</div>` : '';
+                stack.forEach(char => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = "w-full py-1.5 bg-sky-200 dark:bg-slate-700 border-2 border-sky-500 dark:border-slate-600 text-sky-950 dark:text-sky-200 font-mono font-extrabold text-center rounded-xl shadow-sm text-sm";
+                    itemDiv.textContent = char; stackItemsList.appendChild(itemDiv);
+                });
+            }
+
+            (function processStep() {
+                if (i >= expr.length) {
+                    badgeEl.textContent = stack.length === 0 ? "● KẾT QUẢ: BIỂU THỨC NGOẶC HỢP LỆ!" : "● KẾT QUẢ: BIỂU THỨC KHÔNG HỢP LỆ!";
+                    badgeEl.className = stack.length === 0 ? "px-3 py-1 rounded-full bg-emerald-600 text-white text-xs font-extrabold shadow-md" : "px-3 py-1 rounded-full bg-rose-600 text-white text-xs font-extrabold shadow-md";
+                    showAlert(stack.length === 0 ? "KẾT QUẢ: BIỂU THỨC HỢP LỆ!" : "KẾT QUẢ: KHÔNG HỢP LỆ!", stack.length === 0 ? 'success' : 'error');
+                    isAnimating = false; return;
+                }
+                let char = expr[i], origClass = spans[i].className;
+                spans[i].className = "px-3 py-1 rounded-xl bg-sky-600 border-2 border-sky-800 text-white font-mono font-extrabold scale-110 transition-all shadow-lg";
+
+                setTimeout(() => {
+                    if ('({['.includes(char)) { stack.push(char); renderBracketStack(); }
+                    else if (')}]'.includes(char)) {
+                        let pairs = {')': '(', ']': '[', '}': '{'};
+                        if (stack.length === 0 || stack[stack.length - 1] !== pairs[char]) {
+                            spans[i].className = "px-3 py-1 rounded-xl bg-rose-600 border-2 border-rose-800 text-white font-mono font-extrabold scale-110 shadow-lg";
+                            badgeEl.textContent = "● KẾT QUẢ: BIỂU THỨC KHÔNG HỢP LỆ!"; badgeEl.className = "px-3 py-1 rounded-full bg-rose-600 text-white text-xs font-extrabold shadow-md";
+                            showAlert("KẾT QUẢ: BIỂU THỨC KHÔNG HỢP LỆ!", "error"); isAnimating = false; return;
+                        } else { stack.pop(); renderBracketStack(); }
+                    }
+                    setTimeout(() => { spans[i].className = origClass; i++; processStep(); }, animationSpeed * 0.4);
+                }, animationSpeed);
+            })();
+        }
+
+        function generateRandomData() {
+            if (isAnimating || isSpamBlocked) return;
+            if (currentMode === 'stack') { stackData = Array.from({length: 3}, () => Math.floor(Math.random() * 50) + 1); renderStack(); }
+            else if (currentMode === 'queue') { queueData = Array.from({length: 3}, () => ['X', 'Y', 'Z', 'M', 'N', 'K'][Math.floor(Math.random() * 6)]); renderQueue(); }
+        }
+
+        async function clearStructures() {
+            if (isAnimating || isSpamBlocked) return;
+            if (currentMode === 'stack' && stackData.length > 0) {
+                await chibiEatAllData('stack-tube-box', () => { stackData = []; renderStack(); updateCodeSnippet("S.clear()", "Đã xóa sạch Stack."); showAlert("Đã xóa sạch toàn bộ Ngăn xếp!", "warning"); });
+            } else if (currentMode === 'queue' && queueData.length > 0) {
+                await chibiEatAllData('queue-pipe-box', () => { queueData = []; renderQueue(); updateCodeSnippet("Q.clear()", "Đã xóa sạch Queue."); showAlert("Đã xóa sạch toàn bộ Hàng đợi!", "warning"); });
+            } else if (currentMode === 'realqueue' && realQueueData.length > 0) {
+                realQueueData = []; document.getElementById('current-serving-status').textContent = '[ Đang trống ]'; renderRealQueue();
+                updateCodeSnippet("queue.clear()", "Đã xóa sạch hàng chờ phục vụ."); showAlert("Đã xóa sạch hàng chờ phục vụ!", "warning");
+            } else { showAlert("Cấu trúc dữ liệu đã rỗng sẵn!", "info"); }
+        }
+
+        function updateCodeSnippet(code, note) {
+            document.getElementById('python-code-display').textContent = code;
+            if (note) document.getElementById('code-explanation').textContent = note;
+        }
+
+        function showAlert(msg, type = 'info') {
+            const alertBox = document.getElementById('status-alert'), icon = document.getElementById('status-icon'), text = document.getElementById('status-text');
+            alertBox.className = `transition-all duration-300 my-2 p-3 rounded-2xl border-3 text-xs sm:text-sm font-extrabold flex items-center justify-between shadow-lg ${type === 'error' ? 'bg-rose-100 dark:bg-slate-800 text-rose-950 dark:text-rose-200 border-rose-500' : type === 'success' ? 'bg-emerald-100 dark:bg-slate-800 text-emerald-950 dark:text-emerald-200 border-emerald-500' : type === 'warning' ? 'bg-amber-100 dark:bg-slate-800 text-amber-950 dark:text-amber-200 border-amber-500' : 'bg-sky-100 dark:bg-slate-800 text-sky-950 dark:text-sky-200 border-sky-500'}`;
+            icon.className = `fa-solid ${type === 'error' ? 'fa-circle-xmark text-rose-600' : type === 'success' ? 'fa-circle-check text-emerald-600' : type === 'warning' ? 'fa-triangle-exclamation text-amber-600' : 'fa-circle-info text-sky-600'} text-lg`;
+            text.textContent = msg;
+        }
+    </script>
+</body>
+</html>
