@@ -167,7 +167,7 @@
     <div id="intro-overlay">
         <div class="intro-card flex flex-col items-center space-y-4 text-slate-800 dark:text-slate-100">
             <div class="w-28 h-28 rounded-full bg-pink-100 dark:bg-slate-700 border-4 border-pink-400 dark:border-slate-500 flex items-center justify-center shadow-xl overflow-hidden animate-bounce relative group">
-                <img id="intro-chibi-avatar" src="https://cdn2.cdnstep.com/WqOaOW7G9wJxXYhNIAKP/4-1.png" alt="Intro Chibi" class="w-full h-full object-contain">
+                <img id="intro-chibi-avatar" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR4mc4zlNYp8aJFhF8adcJMJkZEOHrNmqvhRXuZznlCWA&s=10" alt="Intro Chibi" class="w-full h-full object-contain">
                 <label for="intro-avatar-file" class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-[11px] cursor-pointer font-extrabold">
                     📷 Đổi ảnh
                 </label>
@@ -256,14 +256,14 @@
             <div id="chibi-dialog" class="absolute -top-10 bg-white dark:bg-slate-800 border-2 border-pink-400 dark:border-slate-600 text-pink-700 dark:text-pink-300 text-xs font-extrabold px-3 py-1 rounded-full shadow-lg whitespace-nowrap pointer-events-none transition-all duration-300">
                 WONDERHOI! ✨
             </div>
-            <img id="https://i.pinimg.com/736x/d9/a3/fa/d9a3fa9b9088acb2b65d221ff9b4c065.jpg" src="" alt="Chibi Mascot" class="w-24 h-24 object-contain drop-shadow-xl pointer-events-none chibi-walking">
+            <img id="chibi-img" src="" alt="Chibi Mascot" class="w-24 h-24 object-contain drop-shadow-xl pointer-events-none chibi-walking">
         </div>
     </div>
 
     <!-- CHIBI 2 (Góc phải dưới) -->
     <div id="fixed-chibi-container" onclick="handleFixedChibiClick()" title="Click vào tớ đi!">
         <div id="fixed-chibi-bubble" class="fixed-speech-bubble">Chán rồi hả?</div>
-        <img id="fixed-chibi-img" src="https://i.ibb.co/3ykfLp6/chibi-normal.png" alt="Chibi Sitting" class="w-28 h-28 object-contain drop-shadow-xl">
+        <img id="fixed-chibi-img" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTrb_zl5TF3wsiVgbn-gu5EKk7eSfiUs__-FWN5YSYYJA&s=10" alt="Chibi Sitting" class="w-28 h-28 object-contain drop-shadow-xl">
     </div>
 
     <!-- HEADER & NHẠC NỀN -->
@@ -641,22 +641,23 @@
         let isMusicPlaying = false;
         let audio;
 
-        let introAvatarSrc = "https://i.ibb.co/3ykfLp6/chibi-normal.png";
-        let customChibiMascotSrc = "https://static.wikia.nocookie.net/projectsekai/images/3/3f/Emu_Otori_Chibi.png";
+        let introAvatarSrc = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR4mc4zlNYp8aJFhF8adcJMJkZEOHrNmqvhRXuZznlCWA&s=10";
+        let customChibiMascotSrc = "https://www.pngall.com/wp-content/uploads/15/Emu-Otori-PNG-Free-Image-thumb.webp";
 
+        // Cập nhật các URL ảnh Chibi theo đúng yêu cầu của bạn
         const CHIBI_IMAGES = {
-            idle: 'chibi.png',
-            clicked: 'chibi-clicked.png',
-            spam: 'chibi-spam.png',
-            eating: 'chibi-eating.png',
-            counterStaff: 'chibi-staff.png',
-            fallback: 'https://static.wikia.nocookie.net/projectsekai/images/3/3f/Emu_Otori_Chibi.png'
+            idle: 'https://www.pngall.com/wp-content/uploads/15/Emu-Otori-PNG-HD-Image-thumb.webp',
+            clicked: 'https://www.pngall.com/wp-content/uploads/15/Emu-Otori-PNG-Image-File.png',
+            spam: 'https://i.redd.it/4xw1eur6y8ae1.png',
+            eating: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT7QjG_75_OMEvA4z476Bih9hMjm9YQRgbP9FOAZ7K7cQ&s',
+            counterStaff: 'https://fbi.cults3d.com/uploaders/22627314/illustration-file/bb549d87-0fb2-4629-8b8c-b0ab417c4726/Dorooo.png',
+            fallback: 'https://www.pngall.com/wp-content/uploads/15/Emu-Otori-PNG-Free-Image-thumb.webp'
         };
 
         const FIXED_CHIBI_CONFIG = {
-            image1: "https://i.ibb.co/3ykfLp6/chibi-normal.png",
-            image2: "https://i.ibb.co/6y4tWvJ/chibi-pain.png",
-            fallback: "https://static.wikia.nocookie.net/projectsekai/images/3/3f/Emu_Otori_Chibi.png"
+            image1: "https://www.pngall.com/wp-content/uploads/15/Emu-Otori-PNG-Cutout-thumb.webp",
+            image2: "https://www.pngall.com/wp-content/uploads/15/Emu-Otori-PNG-Image-File.png",
+            fallback: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTrb_zl5TF3wsiVgbn-gu5EKk7eSfiUs__-FWN5YSYYJA&s=10"
         };
 
         // Danh sách lời thoại đầy đủ (giữ nguyên cũ và thêm các câu thoại mới theo yêu cầu)
@@ -925,7 +926,7 @@
 
         function setChibiState(stateKey) {
             const chibiImg = document.getElementById('chibi-img');
-            if (customChibiMascotSrc) {
+            if (customChibiMascotSrc && stateKey === 'idle') {
                 chibiImg.src = customChibiMascotSrc;
             } else {
                 chibiImg.src = CHIBI_IMAGES[stateKey] || CHIBI_IMAGES.idle;
@@ -2015,7 +2016,7 @@
             if (currentMode === 'stack' && stackData.length > 0) {
                 await chibiEatAllData('stack-tube-box', () => { stackData = []; renderStack(); updateCodeSnippet("S.clear()", "Đã xóa sạch Stack."); showAlert("Đã xóa sạch toàn bộ Ngăn xếp!", "warning"); });
             } else if (currentMode === 'queue' && queueData.length > 0) {
-                await chibiEatAllData('queue-pipe-box', () => { queueData = []; renderQueue(); updateCodeSnippet("Q.clear()", "Đã xóa sạch Queue."); showAlert("Đã xóa sạch toàn bộ Hàng đợi!", "warning"); });
+                await chibiEatAllData('queue-pipe-box', () => { queueData = []; renderQueue(); updateCodeSnippet("Q.clear()", "Đã xóa sạch Queue.", "Đã xóa sạch toàn bộ Hàng đợi!"); showAlert("Đã xóa sạch toàn bộ Hàng đợi!", "warning"); });
             } else if (currentMode === 'realqueue' && realQueueData.length > 0) {
                 realQueueData = []; document.getElementById('current-serving-status').textContent = '[ Đang trống ]'; renderRealQueue();
                 updateCodeSnippet("queue.clear()", "Đã xóa sạch hàng chờ phục vụ."); showAlert("Đã xóa sạch hàng chờ phục vụ!", "warning");
